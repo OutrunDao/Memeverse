@@ -135,11 +135,10 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         require(msgSender == tx.origin, "Only EOA account");
 
         LaunchPool storage pool = _launchPools[poolId];
-        uint64 startTime = pool.startTime;
-        uint64 endTime = pool.endTime;
+        uint128 endTime = pool.endTime;
         uint128 maxDeposit = pool.maxDeposit;
         uint256 currentTime = block.timestamp;
-        require(currentTime > startTime && currentTime < endTime, "Invalid time");
+        require(currentTime < endTime, "Invalid time");
 
         uint256 value;
         if (pool.ethOrUsdb) {
@@ -300,7 +299,6 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
      * @dev register memeverse
      * @param name - Name of token
      * @param symbol - Symbol of token
-     * @param startTime - StartTime of launchpool
      * @param durationDays - Duration days of launchpool
      * @param maxDeposit - Max fee per deposit
      * @param lockupDays - LockupDay of liquidity
@@ -312,8 +310,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         string calldata name,
         string calldata symbol,
         string calldata description,
-        uint64 startTime,
-        uint128 durationDays,
+        uint256 durationDays,
         uint128 maxDeposit,
         uint128 lockupDays,
         uint256 tokenBaseAmount,
@@ -321,14 +318,14 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         bool ethOrUsdb
     ) external override returns (uint256 poolId) {
         require(lockupDays >= minLockupDays && lockupDays <= maxLockupDays, "Invalid lockup days");
-        require(startTime > block.timestamp && durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
+        require(durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
         require(bytes(name).length < 32 && bytes(symbol).length < 32 && bytes(description).length < 257, "String too long");
 
         // Duplicate symbols are not allowed during the liquidity lock period
         require(!_symbolMap[symbol], "Symbol duplication");
         _symbolMap[symbol] = true;
 
-        uint256 endTime = startTime + durationDays * DAY;
+        uint256 endTime = block.timestamp + durationDays * DAY;
 
         // Deploy token
         address msgSender = msg.sender;
@@ -341,8 +338,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
             description, 
             0, 
             0, 
-            startTime, 
-            uint64(endTime),
+            uint128(endTime),
             maxDeposit,
             uint128(endTime + DAY), 
             lockupDays, 
