@@ -7,6 +7,7 @@ interface IMemeverse {
         address token;                  // Token address
         string name;                    // Token name
         string symbol;                  // Token symbol
+        string description;             // Token description;
         uint128 totalLiquidityFund;     // Funds(osETH|osUSD) actually added to the liquidity pool
         uint128 totalLiquidityLP;       // Total liquidity of LP
         uint64 startTime;               // StartTime of launchPool
@@ -55,6 +56,7 @@ interface IMemeverse {
     function registerMemeverse(
         string calldata name,
         string calldata symbol,
+        string calldata description,
         uint64 startTime,
         uint128 durationDays,
         uint128 maxDeposit,

@@ -311,6 +311,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
     function registerMemeverse(
         string calldata name,
         string calldata symbol,
+        string calldata description,
         uint64 startTime,
         uint128 durationDays,
         uint128 maxDeposit,
@@ -321,7 +322,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
     ) external override returns (uint256 poolId) {
         require(lockupDays >= minLockupDays && lockupDays <= maxLockupDays, "Invalid lockup days");
         require(startTime > block.timestamp && durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
-        require(bytes(name).length < 32 && bytes(symbol).length < 32, "String too long");
+        require(bytes(name).length < 32 && bytes(symbol).length < 32 && bytes(description).length < 257, "String too long");
 
         // Duplicate symbols are not allowed during the liquidity lock period
         require(!_symbolMap[symbol], "Symbol duplication");
@@ -337,6 +338,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
             token, 
             name, 
             symbol, 
+            description, 
             0, 
             0, 
             startTime, 
@@ -367,7 +369,9 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
 
         address token = pool.token;
         for(uint256 i = 0; i < length; i++) {
-            IFF(token).setAttribute(names[i], datas[i]);
+            bytes calldata data = datas[i];
+            require(data.length < 257, "Data too long");
+            IFF(token).setAttribute(names[i], data);
         }
     }
 
