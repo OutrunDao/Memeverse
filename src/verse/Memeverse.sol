@@ -21,7 +21,9 @@ import "../utils/IORUSDStakeManager.sol";
 import "../token/FF.sol";
 import "../token/interfaces/IFF.sol";
 
-
+/**
+ * @title Trapped into the memeverse
+ */
 contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
