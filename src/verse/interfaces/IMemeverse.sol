@@ -15,8 +15,7 @@ interface IMemeverse {
         uint128 totalLiquidityLP;       // Total liquidity of LP
         uint128 endTime;                // EndTime of launchPool
         uint128 maxDeposit;             // The maximum amount of funds that can be deposited each time
-        uint128 claimDeadline;          // Token claim deadline
-        uint128 lockupDays;             // LockupDay of liquidity
+        uint256 lockupDays;             // LockupDay of liquidity
         uint256 tokenBaseAmount;        // Token amount based fund
         bool ethOrUsdb;                 // Type of deposited funds, true --> usdb, false --> eth
     }
@@ -63,7 +62,7 @@ interface IMemeverse {
         string calldata description,
         uint256 durationDays,
         uint128 maxDeposit,
-        uint128 lockupDays,
+        uint256 lockupDays,
         uint256 tokenBaseAmount,
         uint256 maxSupply,
         bool ethOrUsdb

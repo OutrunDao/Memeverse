@@ -166,7 +166,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     }
 
     /**
-     * @dev Claim token or refund after claimDeadline
+     * @dev Claim token or refund after endTime
      * @param poolId - LaunchPool id
      */
     function claimTokenOrFund(uint256 poolId) external override {
@@ -179,11 +179,11 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         _tempFunds[poolId] -= fund;
         _tempFundPool[beacon] = 0;
 
-        uint128 claimDeadline = pool.claimDeadline;
-        uint128 lockupDays = pool.lockupDays;
+        uint128 endTime = pool.endTime;
+        uint256 lockupDays = pool.lockupDays;
         uint256 currentTime = block.timestamp;
         if (pool.ethOrUsdb) {
-            if (currentTime < claimDeadline) {
+            if (currentTime < endTime) {
                 // Stake
                 IORUSD(orUSD).deposit(fund);
                 (uint256 amountInOSUSD,) = IORUSDStakeManager(orUSDStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
@@ -216,7 +216,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
                  IERC20(USDB).safeTransfer(msgSender, fund);
             }
         } else {
-            if (currentTime < claimDeadline) {
+            if (currentTime < endTime) {
                 // Stake
                 IORETH(orETH).deposit{value: fund}();
                 (uint256 amountInOSETH,) = IORETHStakeManager(orETHStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
@@ -258,7 +258,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     function enablePoolTokenTransfer(uint256 poolId) external override {
         LaunchPool storage pool = _launchPools[poolId];
         address token = pool.token;
-        require(block.timestamp >= pool.claimDeadline, "Pool not closed");
+        require(block.timestamp >= pool.endTime, "Pool not closed");
         require(!IFF(token).transferable(), "Already enable transfer");
         IFF(token).enableTransfer();
     }
@@ -274,7 +274,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         uint256 fund = _poolFunds[beacon];
         require(fund > 0, "No fund");
         require(!_isPoolLiquidityClaimed[beacon], "Already claimed");
-        require(block.timestamp >= pool.claimDeadline + pool.lockupDays * DAY, "Locked liquidity");
+        require(block.timestamp >= pool.endTime + pool.lockupDays * DAY, "Locked liquidity");
 
         uint256 lpAmount = pool.totalLiquidityLP * fund / pool.totalLiquidityFund;
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
@@ -292,7 +292,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     function claimTransactionFees(uint256 poolId) external override {
         address msgSender = msg.sender;
         LaunchPool storage pool = _launchPools[poolId];
-        require(msgSender == pool.owner && block.timestamp > pool.claimDeadline, "Permission denied");
+        require(msgSender == pool.owner && block.timestamp > pool.endTime, "Permission denied");
 
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
         address pairAddress = OutswapV1Library.pairFor(outswapV1Factory, pool.token, lpBaseToken);
@@ -321,7 +321,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         string calldata description,
         uint256 durationDays,
         uint128 maxDeposit,
-        uint128 lockupDays,
+        uint256 lockupDays,
         uint256 tokenBaseAmount,
         uint256 maxSupply,
         bool ethOrUsdb
@@ -349,7 +349,6 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
             0, 
             uint128(endTime),
             maxDeposit,
-            uint128(endTime + DAY), 
             lockupDays, 
             tokenBaseAmount,
             ethOrUsdb
