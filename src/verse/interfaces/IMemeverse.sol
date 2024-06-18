@@ -42,7 +42,9 @@ interface IMemeverse {
         uint256 _minDurationDays,
         uint256 _maxDurationDays,
         uint256 _minLockupDays,
-        uint256 _maxLockupDays
+        uint256 _maxLockupDays,
+        uint256 _ethLiquidityThreshold,
+        uint256 _usdbLiquidityThreshold
     ) external;
 
     function depositToTempFundPool(uint256 poolId, uint256 usdbValue) external payable;
