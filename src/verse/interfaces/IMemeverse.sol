@@ -11,8 +11,8 @@ interface IMemeverse {
         string name;                    // Token name
         string symbol;                  // Token symbol
         string description;             // Token description;
-        uint128 totalLiquidityFund;     // Funds(osETH|osUSD) actually added to the liquidity pool
-        uint128 totalLiquidityLP;       // Total liquidity of LP
+        uint256 totalLiquidityFund;     // Funds(osETH|osUSD) actually added to the liquidity pool
+        uint256 totalLiquidityLP;       // Total liquidity of LP
         uint128 endTime;                // EndTime of launchPool
         uint128 maxDeposit;             // The maximum amount of funds that can be deposited each time
         uint256 lockupDays;             // LockupDay of liquidity

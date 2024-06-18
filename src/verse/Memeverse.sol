@@ -183,7 +183,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         uint256 lockupDays = pool.lockupDays;
         uint256 currentTime = block.timestamp;
         if (pool.ethOrUsdb) {
-            if (currentTime < endTime) {
+            if (currentTime < endTime || pool.totalLiquidityFund < usdbLiquidityThreshold) {
                 // Stake
                 IORUSD(orUSD).deposit(fund);
                 (uint256 amountInOSUSD,) = IORUSDStakeManager(orUSDStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
@@ -216,7 +216,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
                  IERC20(USDB).safeTransfer(msgSender, fund);
             }
         } else {
-            if (currentTime < endTime) {
+            if (currentTime < endTime || pool.totalLiquidityFund < ethLiquidityThreshold) {
                 // Stake
                 IORETH(orETH).deposit{value: fund}();
                 (uint256 amountInOSETH,) = IORETHStakeManager(orETHStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
@@ -257,9 +257,18 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
      */
     function enablePoolTokenTransfer(uint256 poolId) external override {
         LaunchPool storage pool = _launchPools[poolId];
+        uint256 totalLiquidityFund = pool.totalLiquidityFund;
+
+        if (pool.ethOrUsdb) {
+            require(totalLiquidityFund >= usdbLiquidityThreshold, "Insufficient liquidity");
+        } else {
+            require(totalLiquidityFund >= ethLiquidityThreshold, "Insufficient liquidity");
+        }
+
         address token = pool.token;
-        require(block.timestamp >= pool.endTime, "Pool not closed");
         require(!IFF(token).transferable(), "Already enable transfer");
+        require(block.timestamp >= pool.endTime, "Pool not closed");
+
         IFF(token).enableTransfer();
     }
 
