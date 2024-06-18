@@ -44,6 +44,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     uint256 public maxDurationDays;
     uint256 public minLockupDays;
     uint256 public maxLockupDays;
+    uint256 public ethLiquidityThreshold;
+    uint256 public usdbLiquidityThreshold;
 
     mapping(address token => uint256) private _poolIds;
     mapping(uint256 poolId => LaunchPool) private _launchPools;
@@ -118,7 +120,9 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         uint256 _minDurationDays,
         uint256 _maxDurationDays,
         uint256 _minLockupDays,
-        uint256 _maxLockupDays
+        uint256 _maxLockupDays,
+        uint256 _ethLiquidityThreshold,
+        uint256 _usdbLiquidityThreshold
     ) external override initializer {
         setMinEthLiquidity(_minEthLiquidity);
         setMinUsdbLiquidity(_minUsdbLiquidity);
@@ -126,6 +130,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         setMaxDurationDays(_maxDurationDays);
         setMinLockupDays(_minLockupDays);
         setMaxLockupDays(_maxLockupDays);
+        setEthLiquidityThreshold(_ethLiquidityThreshold);
+        setUsdbLiquidityThreshold(_usdbLiquidityThreshold);
     }
 
     /**
@@ -414,5 +420,19 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
      */
     function setMaxLockupDays(uint256 _maxLockupDays) public override onlyOwner {
         maxLockupDays = _maxLockupDays;
+    }
+
+    /**
+     * @param _ethLiquidityThreshold - ETH liquidity threshold
+     */
+    function setEthLiquidityThreshold(uint256 _ethLiquidityThreshold) public override onlyOwner {
+        ethLiquidityThreshold = _ethLiquidityThreshold;
+    }
+
+    /**
+     * @param _usdbLiquidityThreshold - USDB liquidity threshold
+     */
+    function setUsdbLiquidityThreshold(uint256 _usdbLiquidityThreshold) public override onlyOwner {
+        usdbLiquidityThreshold = _usdbLiquidityThreshold;
     }
 }
