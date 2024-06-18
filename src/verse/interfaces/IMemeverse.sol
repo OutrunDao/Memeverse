@@ -83,6 +83,10 @@ interface IMemeverse {
 
     function setMaxLockupDays(uint256 _maxLockupDays) external;
 
+    function setEthLiquidityThreshold(uint256 _ethLiquidityThreshold) external;
+
+    function setUsdbLiquidityThreshold(uint256 _usdbLiquidityThreshold) external;
+
 
     event ClaimPoolLiquidity(uint256 indexed poolId, address account, uint256 lpAmount);
 
