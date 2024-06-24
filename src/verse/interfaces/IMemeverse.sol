@@ -43,7 +43,8 @@ interface IMemeverse {
         uint256 _minLockupDays,
         uint256 _maxLockupDays,
         uint256 _ethLiquidityThreshold,
-        uint256 _usdbLiquidityThreshold
+        uint256 _usdbLiquidityThreshold,
+        uint256 _genesisFee
     ) external;
 
     function depositToTempFundPool(uint256 poolId, uint256 usdbValue) external payable;
@@ -66,7 +67,7 @@ interface IMemeverse {
         uint256 tokenBaseAmount,
         uint256 maxSupply,
         bool ethOrUsdb
-    ) external returns (uint256 poolId);
+    ) external payable returns (uint256 poolId);
 
     function setAttributes(uint256 poolId, string[] calldata names, bytes[] calldata datas) external;
 
@@ -85,6 +86,8 @@ interface IMemeverse {
     function setEthLiquidityThreshold(uint256 _ethLiquidityThreshold) external;
 
     function setUsdbLiquidityThreshold(uint256 _usdbLiquidityThreshold) external;
+
+    function setGenesisFee(uint256 _genesisFee) external;
 
 
     event ClaimPoolLiquidity(uint256 indexed poolId, address account, uint256 lpAmount);

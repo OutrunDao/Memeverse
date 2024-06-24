@@ -46,6 +46,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     uint256 public maxLockupDays;
     uint256 public ethLiquidityThreshold;
     uint256 public usdbLiquidityThreshold;
+    uint256 public genesisFee;
 
     mapping(address token => uint256) private _poolIds;
     mapping(uint256 poolId => LaunchPool) private _launchPools;
@@ -122,7 +123,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         uint256 _minLockupDays,
         uint256 _maxLockupDays,
         uint256 _ethLiquidityThreshold,
-        uint256 _usdbLiquidityThreshold
+        uint256 _usdbLiquidityThreshold,
+        uint256 _genesisFee
     ) external override initializer {
         setMinEthLiquidity(_minEthLiquidity);
         setMinUsdbLiquidity(_minUsdbLiquidity);
@@ -132,6 +134,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         setMaxLockupDays(_maxLockupDays);
         setEthLiquidityThreshold(_ethLiquidityThreshold);
         setUsdbLiquidityThreshold(_usdbLiquidityThreshold);
+        setGenesisFee(_genesisFee);
     }
 
     /**
@@ -334,7 +337,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         uint256 tokenBaseAmount,
         uint256 maxSupply,
         bool ethOrUsdb
-    ) external override returns (uint256 poolId) {
+    ) external payable override returns (uint256 poolId) {
+        require(msg.value >= genesisFee, "Insufficient genesis fee");
         require(lockupDays >= minLockupDays && lockupDays <= maxLockupDays, "Invalid lockup days");
         require(durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
         require(bytes(name).length < 32 && bytes(symbol).length < 32 && bytes(description).length < 257, "String too long");
@@ -442,5 +446,12 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
      */
     function setUsdbLiquidityThreshold(uint256 _usdbLiquidityThreshold) public override onlyOwner {
         usdbLiquidityThreshold = _usdbLiquidityThreshold;
+    }
+
+    /**
+     *@param _genesisFee - Genesis memeverse fee
+     */
+    function setGenesisFee(uint256 _genesisFee) public override onlyOwner {
+        genesisFee = _genesisFee;
     }
 }
