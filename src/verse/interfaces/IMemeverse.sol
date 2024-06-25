@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
 /**
@@ -8,11 +8,11 @@ interface IMemeverse {
     struct LaunchPool {
         address owner;                  // LaunchPool owner
         address token;                  // Token address
+        address liquidityERC20;         // LiquidityERC20 address
         string name;                    // Token name
         string symbol;                  // Token symbol
         string description;             // Token description;
         uint256 totalLiquidityFund;     // Funds(osETH|osUSD) actually added to the liquidity pool
-        uint256 totalLiquidityLP;       // Total liquidity of LP
         uint128 endTime;                // EndTime of launchPool
         uint128 maxDeposit;             // The maximum amount of funds that can be deposited each time
         uint256 lockupDays;             // LockupDay of liquidity
@@ -20,7 +20,7 @@ interface IMemeverse {
         bool ethOrUsdb;                 // Type of deposited funds, true --> usdb, false --> eth
     }
 
-    function launchPool(uint256 poolId) external view returns (LaunchPool memory);
+    function launchPools(uint256 poolId) external view returns (LaunchPool memory);
 
     function poolIds(address token) external view returns (uint256);
 
@@ -28,14 +28,14 @@ interface IMemeverse {
 
     function tempFundPool(uint256 poolId, address account) external view returns (uint256);
 
-    function poolFunds(uint256 poolId, address account) external view returns (uint256);
-
-    function isPoolLiquidityClaimed(uint256 poolId, address account) external view returns (bool);
-
     function getPoolByToken(address token) external view returns (LaunchPool memory);
 
 
     function initialize(
+        address _reserveFundManager,
+        uint256 _reserveFundRatio,
+        uint256 _permanentLockRatio,
+        uint256 _maxEarlyUnlockRatio,
         uint256 _minEthLiquidity,
         uint256 _minUsdbLiquidity,
         uint256 _minDurationDays,
@@ -53,7 +53,7 @@ interface IMemeverse {
 
     function enablePoolTokenTransfer(uint256 poolId) external;
 
-    function claimPoolLiquidity(uint256 poolId) external;
+    function claimPoolLiquidity(uint256 poolId, uint256 burnedLiquidity) external;
 
     function claimTransactionFees(uint256 poolId) external;
 
@@ -64,12 +64,18 @@ interface IMemeverse {
         uint256 durationDays,
         uint128 maxDeposit,
         uint256 lockupDays,
-        uint256 tokenBaseAmount,
+        uint48 tokenBaseAmount,
         uint256 maxSupply,
         bool ethOrUsdb
     ) external payable returns (uint256 poolId);
 
     function setAttributes(uint256 poolId, string[] calldata names, bytes[] calldata datas) external;
+
+    function setReserveFundRatio(uint256 _reserveFundRatio) external;
+
+    function setPermanentLockRatio(uint256 _permanentLockRatio) external;
+
+    function setMaxEarlyUnlockRatio(uint256 _maxEarlyUnlockRatio) external;
 
     function setMinEthLiquidity(uint256 _minEthLiquidity) external;
 
