@@ -90,8 +90,8 @@ contract Meme is IMeme, Ownable, GasManagerable {
         _isTransferable = true;
     }
 
-    function mint(address _account, uint256 _amount) external override onlyMemeverse {
-        _mint(_account, _amount);
+    function mint(address account, uint256 amount) external override onlyMemeverse {
+        _mint(account, amount);
 
         if (_maxSupply != 0 && _totalSupply > _maxSupply) {
             revert MemeTokenExceedsMaxSupply();
