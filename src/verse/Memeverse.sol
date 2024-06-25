@@ -299,21 +299,27 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     }
 
     /**
-     * @dev Claim your liquidity by pooId when liquidity unlocked
+     * @dev Burn liquidityERC20 to claim the locked liquidity
      * @param poolId - LaunchPool id
      * @param burnedLiquidity - Burned liquidity
+     * @notice If you unlock early, a portion of your liquidity will be permanently locked in reverse proportion to the time you have already locked
      */
-    function claimPoolLiquidity(uint256 poolId, uint256 burnedLiquidity) external override {
+    function claimPoolLiquidity(uint256 poolId, uint256 burnedLiquidity) external override returns (uint256 claimedLiquidity) {
         address msgSender = msg.sender;
         LaunchPool storage pool = _launchPools[poolId];
-        require(block.timestamp >= pool.endTime + pool.lockupDays * DAY, "Locked liquidity");
         IMemeLiquidityERC20(pool.liquidityERC20).burn(msgSender, burnedLiquidity);
+
+        uint256 endTime = pool.endTime;
+        uint256 lockedDays = (block.timestamp - endTime) / DAY;
+        uint256 maxRatioDays = pool.lockupDays * maxEarlyUnlockRatio / RATIO;
+        lockedDays = lockedDays > maxRatioDays ? maxRatioDays : lockedDays;
+        claimedLiquidity = burnedLiquidity * lockedDays * maxEarlyUnlockRatio / maxRatioDays / RATIO;
 
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
         address pairAddress = OutswapV1Library.pairFor(outswapV1Factory, pool.token, lpBaseToken);
-        IERC20(pairAddress).safeTransfer(msgSender, burnedLiquidity);
+        IERC20(pairAddress).safeTransfer(msgSender, claimedLiquidity);
 
-        emit ClaimPoolLiquidity(poolId, msgSender, burnedLiquidity);
+        emit ClaimPoolLiquidity(poolId, msgSender, claimedLiquidity);
     }
 
     /**

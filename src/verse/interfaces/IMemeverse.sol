@@ -35,7 +35,7 @@ interface IMemeverse {
         address _reserveFundManager,
         uint256 _reserveFundRatio,
         uint256 _permanentLockRatio,
-        uint256 _maxEarlyUnlockRatio,
+        uint256 _earlyUnlockRatio,
         uint256 _minEthLiquidity,
         uint256 _minUsdbLiquidity,
         uint256 _minDurationDays,
@@ -53,7 +53,7 @@ interface IMemeverse {
 
     function enablePoolTokenTransfer(uint256 poolId) external;
 
-    function claimPoolLiquidity(uint256 poolId, uint256 burnedLiquidity) external;
+    function claimPoolLiquidity(uint256 poolId, uint256 burnedLiquidity) external returns (uint256 claimedLiquidity);
 
     function claimTransactionFees(uint256 poolId) external;
 
@@ -75,7 +75,7 @@ interface IMemeverse {
 
     function setPermanentLockRatio(uint256 _permanentLockRatio) external;
 
-    function setMaxEarlyUnlockRatio(uint256 _maxEarlyUnlockRatio) external;
+    function setMaxEarlyUnlockRatio(uint256 _earlyUnlockRatio) external;
 
     function setMinEthLiquidity(uint256 _minEthLiquidity) external;
 
