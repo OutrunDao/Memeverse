@@ -18,8 +18,8 @@ import "../utils/IOutswapV1Router.sol";
 import "../utils/IOutswapV1Pair.sol";
 import "../utils/IORETHStakeManager.sol";
 import "../utils/IORUSDStakeManager.sol";
-import "../token/FF.sol";
-import "../token/interfaces/IFF.sol";
+import "../token/Meme.sol";
+import "../token/interfaces/IMeme.sol";
 
 /**
  * @title Trapped into the memeverse
@@ -194,8 +194,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
                 // Mint token
                 uint256 tokenAmount = pool.tokenBaseAmount * amountInOSUSD;
                 address token = pool.token;
-                IFF(token).mint(msgSender, tokenAmount);
-                IFF(token).mint(address(this), tokenAmount);
+                IMeme(token).mint(msgSender, tokenAmount);
+                IMeme(token).mint(address(this), tokenAmount);
 
                 // Deploy liquidity
                 IERC20(token).approve(outswapV1Router, tokenAmount);
@@ -227,8 +227,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
                 // Mint token
                 uint256 tokenAmount = pool.tokenBaseAmount * amountInOSETH;
                 address token = pool.token;
-                IFF(token).mint(msgSender, tokenAmount);
-                IFF(token).mint(address(this), tokenAmount);
+                IMeme(token).mint(msgSender, tokenAmount);
+                IMeme(token).mint(address(this), tokenAmount);
 
                 // Deploy liquidity
                 IERC20(token).approve(outswapV1Router, tokenAmount);
@@ -269,10 +269,10 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         }
 
         address token = pool.token;
-        require(!IFF(token).transferable(), "Already enable transfer");
+        require(!IMeme(token).transferable(), "Already enable transfer");
         require(block.timestamp >= pool.endTime, "Pool not closed");
 
-        IFF(token).enableTransfer();
+        IMeme(token).enableTransfer();
     }
 
     /**
@@ -351,7 +351,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
 
         // Deploy token
         address msgSender = msg.sender;
-        address token = address(new FF(name, symbol, maxSupply, address(this), msgSender));
+        address token = address(new Meme(name, symbol, maxSupply, address(this), msgSender));
         LaunchPool memory pool = LaunchPool(
             msgSender, 
             token, 
@@ -388,7 +388,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         for(uint256 i = 0; i < length; i++) {
             bytes calldata data = datas[i];
             require(data.length < 257, "Data too long");
-            IFF(token).setAttribute(names[i], data);
+            IMeme(token).setAttribute(names[i], data);
         }
     }
 

@@ -3,13 +3,13 @@ pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/IFF.sol";
+import "./interfaces/IMeme.sol";
 import "../blast/GasManagerable.sol";
 
 /**
- * @title FF token.
+ * @title Memeverse token.
  */
-contract FF is IFF, Ownable, GasManagerable {
+contract Meme is IMeme, Ownable, GasManagerable {
     uint256 public constant DAY = 24 * 3600;
 
     string private _name;
@@ -18,14 +18,14 @@ contract FF is IFF, Ownable, GasManagerable {
     uint256 private _totalSupply;
     uint256 private _maxSupply;
     address private _memeverse;
-    bool private _isTransferable; // Enable after FFLaunch is completed.
+    bool private _isTransferable;
 
     mapping(address account => uint256) private _balances;
     mapping(address account => mapping(address spender => uint256)) private _allowances;
     // 前端需要网址安全校验. Description, Twitter, Telegram, Discord, Website and more. Max length = 256
     mapping(string name => bytes) private _attributes;  // Additional attributes
 
-    error FFTokenExceedsMaxSupply();
+    error MemeTokenExceedsMaxSupply();
 
     modifier onlyMemeverse() {
         require(msg.sender == _memeverse, "Only memeverse");
@@ -94,7 +94,7 @@ contract FF is IFF, Ownable, GasManagerable {
         _mint(_account, _amount);
 
         if (_maxSupply != 0 && _totalSupply > _maxSupply) {
-            revert FFTokenExceedsMaxSupply();
+            revert MemeTokenExceedsMaxSupply();
         }
     }
 

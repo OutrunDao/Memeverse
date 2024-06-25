@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IERC20Errors.sol";
 
 /**
- * @title Fair and free token interface
+ * @title Meme token interface
  */
-interface IFF is IERC20, IERC20Errors {
+interface IMeme is IERC20, IERC20Errors {
     function memeverse() external view returns (address);
 
     function maxSupply() external view returns (uint256);
