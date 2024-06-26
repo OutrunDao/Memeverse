@@ -86,7 +86,7 @@ Currently, there are many ways to issue Memecoins on the market, but these metho
 
 In summary, Memeverse provides innovative issuance methods, staking reward mechanisms, economic support measures, and community-driven forces, offering new perspectives and solutions for Memecoin development. These advantages not only enhance the market competitiveness of Memecoins but also have the potential to drive the entire industry towards greater transparency, security, and sustainability.
 
-### Memeverse Reserve Fund
+## Memeverse Reserve Fund
 
 The Memeverse Reserve Fund is established during the genesis phase of Memecoin, so each Memecoin has its own reserve fund. During the genesis phase, 20% of the liquidity staking tokens minted by investors are allocated to the reserve fund. When the reserve fund is fully constructed, it initially contains only liquidity staking tokens, with no Memecoin. The benchmark price of Memecoin set in the reserve fund is anchored to the initial price at the time of open trading. 
 
