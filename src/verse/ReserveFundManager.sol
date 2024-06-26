@@ -77,14 +77,14 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
         ReserveFund storage reserveFund = _reserveFunds[token];
         address fundToken = reserveFund.ethOrUsdb ? osUSD : osETH;
         IERC20(fundToken).safeTransferFrom(msgSender, address(this), inputFund);
+        uint256 purchaseFee = inputFund * purchaseFeeRatio / RATIO;
+        inputFund -= purchaseFee;
 
         outputToken = inputFund * FixedPoint128.Q128 / reserveFund.basePriceX128;
         uint256 tokenAmount = reserveFund.tokenAmount;
         require(tokenAmount >= outputToken, "Insufficient reserve token");
         reserveFund.tokenAmount = tokenAmount - outputToken;
-        uint256 purchaseFee = outputToken * purchaseFeeRatio / RATIO;
-        IMeme(token).burn(address(this), purchaseFee);
-        outputToken -= purchaseFee;
+        
         IERC20(token).safeTransfer(msgSender, outputToken);
     }
 
