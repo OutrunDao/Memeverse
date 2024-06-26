@@ -14,7 +14,6 @@ interface IReserveFundManager {
 
     function reserveFunds(address token) external view returns (ReserveFund memory);
 
-
     function deposit(address token, uint256 fundAmount, uint256 basePriceX128, bool ethOrUsdb) external;
 
     function purchase(address token, uint256 fundAmount) external returns (uint256 tokenAmount);
