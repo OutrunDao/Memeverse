@@ -66,7 +66,7 @@ Memeverse 的灵感来自 FFLaunch，他们有着很多相似的地方，可以�
 
 关于 FFLaunch 的特性请参见 FFLaunch 的详细说明。
 
-### 为什么选择 Memeverse
+### 为什么选择 Memeverse ?
 
 当前市场上存在很多 Memecoin 的发行方式，但是这些发行方式都太过于原始，并且没有什么创新，还面临着老鼠仓，Rug Pull 等巨大的风险，也没有创造新的价值。相比于市场上的竞争对手，Memeverse 具有以下优势：
 
