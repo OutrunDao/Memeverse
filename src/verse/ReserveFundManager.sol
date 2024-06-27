@@ -75,7 +75,8 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
     function purchase(address token, uint256 inputFund) external override returns (uint256 outputToken) {
         address msgSender = msg.sender;
         ReserveFund storage reserveFund = _reserveFunds[token];
-        address fundToken = reserveFund.ethOrUsdb ? osUSD : osETH;
+        bool ethOrUsdb = reserveFund.ethOrUsdb;
+        address fundToken = ethOrUsdb ? osUSD : osETH;
         IERC20(fundToken).safeTransferFrom(msgSender, address(this), inputFund);
         uint256 purchaseFee = inputFund * purchaseFeeRatio / RATIO;
         inputFund -= purchaseFee;
@@ -84,8 +85,9 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
         uint256 tokenAmount = reserveFund.tokenAmount;
         require(tokenAmount >= outputToken, "Insufficient reserve token");
         reserveFund.tokenAmount = tokenAmount - outputToken;
-        
         IERC20(token).safeTransfer(msgSender, outputToken);
+
+        emit Purchase(token, outputToken, ethOrUsdb, purchaseFee);
     }
 
     /**
@@ -97,9 +99,9 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
     function repurchase(address token, uint256 inputToken) external override returns (uint256 outputFund) {
         address msgSender = msg.sender;
         IERC20(token).safeTransferFrom(msgSender, address(this), inputToken);
-        uint256 purchaseFee = inputToken * purchaseFeeRatio / RATIO;
-        IMeme(token).burn(address(this), purchaseFee);
-        inputToken -= purchaseFee;
+        uint256 burnedToken = inputToken * purchaseFeeRatio / RATIO;
+        IMeme(token).burn(address(this), burnedToken);
+        inputToken -= burnedToken;
 
         ReserveFund storage reserveFund = _reserveFunds[token];
         outputFund = inputToken * reserveFund.basePriceX128 / FixedPoint128.Q128;
@@ -107,8 +109,11 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
         require(fundAmount >= outputFund, "Insufficient reserve fund");
         reserveFund.fundAmount = fundAmount - outputFund;
 
-        address fundToken = reserveFund.ethOrUsdb ? osUSD : osETH;
+        bool ethOrUsdb = reserveFund.ethOrUsdb;
+        address fundToken = ethOrUsdb ? osUSD : osETH;
         IERC20(fundToken).safeTransfer(msgSender, outputFund);
+
+        emit Repurchase(token, outputFund, ethOrUsdb, burnedToken);
     }
 
     /**

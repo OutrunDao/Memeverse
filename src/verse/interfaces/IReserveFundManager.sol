@@ -21,4 +21,8 @@ interface IReserveFundManager {
     function repurchase(address token, uint256 tokenAmount) external returns (uint256 fundAmount);
 
     function setPurchaseFeeRatio(uint256 _purchaseFeeRatio) external;
+
+    event Purchase(address indexed token, uint256 outputToken, bool indexed ethOrUsdb, uint256 purchaseFee);
+
+    event Repurchase(address indexed token, uint256 outputFund, bool indexed ethOrUsdb, uint256 burnedToken);
 }
