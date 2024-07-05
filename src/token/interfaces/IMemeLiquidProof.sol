@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IERC20Errors.sol";
 
 /**
- * @title Memeverse Liquidity ERC20 Token Interface
+ * @title Memeverse Liquidity proof Token Interface
  */
-interface IMemeLiquidityERC20 is IERC20, IERC20Errors {
+interface IMemeLiquidProof is IERC20, IERC20Errors {
     function memeverse() external view returns (address);
 
     function mint(address _account, uint256 _amount) external;

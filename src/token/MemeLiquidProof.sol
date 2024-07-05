@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "./interfaces/IMemeLiquidityERC20.sol";
+import "./interfaces/IMemeLiquidProof.sol";
 import "../blast/GasManagerable.sol";
 
 /**
- * @title Memeverse Liquidity ERC20 Token Standard
+ * @title Memeverse Liquidity proof Token Standard
  */
-contract MemeLiquidityERC20 is IMemeLiquidityERC20, GasManagerable {
+contract MemeLiquidProof is IMemeLiquidProof, GasManagerable {
     string private _name;
     string private _symbol;
     uint8 private _decimals;
