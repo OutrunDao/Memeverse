@@ -98,6 +98,24 @@ The reserve fund is accessible to everyone, allowing anyone to utilize its funds
 
 + **Price Arbitrage**: When the market price of Memecoin falls below a certain threshold, users can buy Memecoin from the market and then use the reserve fund to repurchase and complete arbitrage. Conversely, if the reserve fund holds Memecoin and the market price of Memecoin rises above a certain threshold, users can purchase the previously repurchased Memecoin from the reserve fund and sell it on the market to complete arbitrage.
 
+## Referral service
+
+The value of Memecoins often comes from community members spreading the word and actively promoting them. When community members discuss and share their views and experiences with Memecoins on different platforms, it effectively spreads the value and philosophy of the coin, attracting more new users and investors.
+
+The success of Memecoins like Dogecoin largely depends on the power of the community. Through platforms like Reddit, Twitter, and other social media, community members continuously promote, share memes, organize events, and attract a large number of supporters, including celebrities. Eventually, Dogecoin not only became a popular cryptocurrency but was also adopted in specific practical scenarios such as tipping, donations, and sponsorships.
+
+Therefore, we have developed a unique referral service where users can generate exclusive referral links to share on social media platforms. Through these referral links, other users can directly access the Memecoin details page with a single click, eliminating the steps of searching for contract addresses and checking details within the community. When transactions are made on the Memecoin details page, referrers will receive a 20% commission from the protocol fees. This referral service not only stimulates community activity but also reduces barriers for potential community members to join, bringing the following benefits to Memeverse:
+
++ **Simplified Referral Process**: With one-click access links, potential users can quickly learn about and trade Memecoin, reducing the cumbersome steps of finding contract addresses and checking Memecoin details, greatly lowering the entry threshold.
+
++ **Incentive Mechanism**: Referrers receive a 20% commission from the protocol fees. This reward mechanism not only encourages existing community members to actively promote but also attracts new members, expanding the community.
+
++ **ncreased Transparency and Trust**: Referral links directly lead to the Memecoin details page, allowing users to quickly obtain the necessary information, enhancing the project's transparency and user trust.
+
++ **Enhanced Community Activity**: This Referral method can motivate community members to participate and interact more frequently, enhancing community activity and cohesion.
+
+**When users trade using your Memeverse referral link, it will temporarily bypass Outrun AMM's referrers. If the trading user does not have a referrerat that time, you will be directly registered as the user's referrer.**
+
 ## Event lifecycle
 
 Compared to FFLaunch events, the lifecycle of Memeverse events is simpler, involving only 2 entities and 4 stages.
@@ -117,7 +135,7 @@ Compared to FFLaunch events, the lifecycle of Memeverse events is simpler, invol
 
 + During the genesis stage of Memeverse, investors can repeatedly call the deposit method of the Memeverse contract to deposit into the temporary liquidity pool of that Memeverse.
 
-+ After depositing into the temporary liquidity pool, investors can continue to call the Memeverse contract's claimTokenOrFund method to stake their deposit in the Outstake for minting liquidity staking tokens and Memecoin. 50% of minted Memecoin will be paired with 80% of minted liquidity staking tokens on Outswap to provide liquidity. The LP tokens will be locked in the Memeverse contract (with 20% permanently locked), and tradeable liquidity proof tokens will be minted for investors. The remaining 50% of Memecoin will be directly sent to users, while the remaining 20% of liquidity staking tokens will be added to the Memeverse Reserve Fund.
++ After depositing into the temporary liquidity pool, investors can continue to call the Memeverse contract's claimTokenOrFund method to stake their deposit in the Outstake for minting liquidity staking tokens and Memecoin. 2/3 of minted Memecoin will be paired with 80% of minted liquidity staking tokens on Outswap to provide liquidity. The LP tokens will be locked in the Memeverse contract (with 50% permanently locked), and tradeable liquidity proof tokens will be minted for investors. The remaining 1/3 of Memecoin will be directly sent to users, while the remaining 20% of liquidity staking tokens will be added to the Memeverse Reserve Fund.
 
 + It is worth noting that to prevent the genesis of Memeverse from becoming too widespread, the accumulated liquidity during the genesis stage must reach a certain threshold to proceed to the next stage. Otherwise, it will continue until enough liquidity is accumulated.
 
@@ -135,6 +153,6 @@ Compared to FFLaunch events, the lifecycle of Memeverse events is simpler, invol
 
 + When the liquidity locking period expires, investors can choose to withdraw their liquidity locked during the genesis stage.
 
-+ It's worth noting that it's possible to unlock liquidity early even before the liquidity unlocking phase, but only a portion can be unlocked, and the remainder will be permanently locked. The unlockable portion dynamically increases based on the locked days, ranging from (0%, 60%], meaning early unlocking will incur a minimum loss of 40%.
++ It's worth noting that it's possible to unlock liquidity early even before the liquidity unlocking phase, but only a portion can be unlocked, and the remainder will be permanently locked. The unlockable portion dynamically increases based on the locked days, ranging from (0%, 70%], meaning early unlocking will incur a minimum loss of 30%.
 
 **These stages and entities collectively define the complete lifecycle of Memeverse events, ensuring the security, transparency, and compliance of Memecoin throughout the execution process.**
