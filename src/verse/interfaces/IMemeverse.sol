@@ -8,43 +8,39 @@ interface IMemeverse {
     struct LaunchPool {
         address owner;                  // LaunchPool owner
         address token;                  // Token address
-        address liquidityERC20;         // LiquidityERC20 address
+        address liquidProof;            // Liquidity proof token address
         string name;                    // Token name
         string symbol;                  // Token symbol
         string description;             // Token description;
-        uint256 totalLiquidityFund;     // Funds(osETH|osUSD) actually added to the liquidity pool
+        uint256 totalFund;              // Funds(osETH|osUSD) actually added to the memeverse
         uint128 endTime;                // EndTime of launchPool
         uint128 maxDeposit;             // The maximum amount of funds that can be deposited each time
         uint256 lockupDays;             // LockupDay of liquidity
-        uint256 tokenBaseAmount;        // Token amount based fund
+        uint256 fundBasedAmount;        // Token amount based fund
         bool ethOrUsdb;                 // Type of deposited funds, true --> usdb, false --> eth
     }
 
     function launchPools(uint256 poolId) external view returns (LaunchPool memory);
 
-    function poolIds(address token) external view returns (uint256);
-
     function tempFunds(uint256 poolId) external view returns (uint256);
 
     function tempFundPool(uint256 poolId, address account) external view returns (uint256);
-
-    function getPoolByToken(address token) external view returns (LaunchPool memory);
 
 
     function initialize(
         address _reserveFundManager,
         uint256 _reserveFundRatio,
         uint256 _permanentLockRatio,
-        uint256 _earlyUnlockRatio,
-        uint256 _minEthLiquidity,
-        uint256 _minUsdbLiquidity,
-        uint256 _minDurationDays,
-        uint256 _maxDurationDays,
-        uint256 _minLockupDays,
-        uint256 _maxLockupDays,
-        uint256 _ethLiquidityThreshold,
-        uint256 _usdbLiquidityThreshold,
-        uint256 _genesisFee
+        uint256 _maxEarlyUnlockRatio,
+        uint256 _minEthFund,
+        uint256 _minUsdbFund,
+        uint256 _genesisFee,
+        uint128 _minDurationDays,
+        uint128 _maxDurationDays,
+        uint128 _minLockupDays,
+        uint128 _maxLockupDays,
+        uint128 _minfundBasedAmount,
+        uint128 _maxfundBasedAmount
     ) external;
 
     function depositToTempFundPool(uint256 poolId, uint256 usdbValue) external payable;
@@ -61,10 +57,10 @@ interface IMemeverse {
         string calldata name,
         string calldata symbol,
         string calldata description,
-        uint256 durationDays,
         uint128 maxDeposit,
-        uint256 lockupDays,
-        uint48 tokenBaseAmount,
+        uint128 durationDays,
+        uint128 lockupDays,
+        uint128 fundBasedAmount,
         uint256 maxSupply,
         bool ethOrUsdb
     ) external payable returns (uint256 poolId);
@@ -76,24 +72,24 @@ interface IMemeverse {
     function setPermanentLockRatio(uint256 _permanentLockRatio) external;
 
     function setMaxEarlyUnlockRatio(uint256 _earlyUnlockRatio) external;
+        
+    function setMinEthFund(uint256 _minEthFund) external;
 
-    function setMinEthLiquidity(uint256 _minEthLiquidity) external;
-
-    function setMinUsdbLiquidity(uint256 _minUsdbLiquidity) external;
-
-    function setMinDurationDays(uint256 _minDurationDays) external;
-
-    function setMaxDurationDays(uint256 _maxDurationDays) external;
-
-    function setMinLockupDays(uint256 _minLockupDays) external;
-
-    function setMaxLockupDays(uint256 _maxLockupDays) external;
-
-    function setEthLiquidityThreshold(uint256 _ethLiquidityThreshold) external;
-
-    function setUsdbLiquidityThreshold(uint256 _usdbLiquidityThreshold) external;
+    function setMinUsdbFund(uint256 _minUsdbFund) external;
 
     function setGenesisFee(uint256 _genesisFee) external;
+
+    function setMinDurationDays(uint128 _minDurationDays) external;
+
+    function setMaxDurationDays(uint128 _maxDurationDays) external;
+
+    function setMinLockupDays(uint128 _minLockupDays) external;
+
+    function setMaxLockupDays(uint128 _maxLockupDays) external;
+
+    function setMinfundBasedAmount(uint128 _minfundBasedAmount) external;
+
+    function setMaxfundBasedAmount(uint128 _maxfundBasedAmount) external;
 
 
     event ClaimPoolLiquidity(uint256 indexed poolId, address account, uint256 lpAmount);
