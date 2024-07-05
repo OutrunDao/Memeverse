@@ -16,14 +16,14 @@ contract Meme is IMeme, Ownable, GasManagerable {
     string private _symbol;
     uint8 private _decimals;
     uint256 private _totalSupply;
-    uint256 private _maxSupply;
+    uint256 private _maxSupply; // if 0, unlimit
     address private _memeverse;
     address private _reserveFundManager;
     bool private _isTransferable;
 
     mapping(address account => uint256) private _balances;
     mapping(address account => mapping(address spender => uint256)) private _allowances;
-    // 前端需要网址安全校验. Description, Twitter, Telegram, Discord, Website and more. Max length = 256
+    // Description, Twitter, Telegram, Discord, Website and more. Max length = 256
     mapping(string name => bytes) private _attributes;  // Additional attributes
 
     error MemeTokenExceedsMaxSupply();
