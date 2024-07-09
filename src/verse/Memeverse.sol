@@ -15,7 +15,7 @@ import "../utils/Initializable.sol";
 import "../utils/AutoIncrementId.sol";
 import "../utils/IORETH.sol";
 import "../utils/IORUSD.sol";
-import "../utils/OutswapV1Library.sol";
+import "../utils/OutswapV1Library02.sol";
 import "../utils/IOutswapV1Router.sol";
 import "../utils/IOutswapV1Pair.sol";
 import "../utils/IORETHStakeManager.sol";
@@ -319,7 +319,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         }
         
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
-        address pairAddress = OutswapV1Library.pairFor(outswapV1Factory, pool.token, lpBaseToken);
+        address pairAddress = OutswapV1Library02.pairFor(outswapV1Factory, pool.token, lpBaseToken);
         IERC20(pairAddress).safeTransfer(msgSender, claimedLiquidity);
 
         emit ClaimPoolLiquidity(poolId, msgSender, claimedLiquidity);
@@ -335,7 +335,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         require(msgSender == pool.owner && block.timestamp > pool.endTime, "Permission denied");
 
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
-        address pairAddress = OutswapV1Library.pairFor(outswapV1Factory, pool.token, lpBaseToken);
+        address pairAddress = OutswapV1Library02.pairFor(outswapV1Factory, pool.token, lpBaseToken);
         IOutswapV1Pair pair = IOutswapV1Pair(pairAddress);
         (uint256 amount0, uint256 amount1) = pair.claimMakerFee();
         IERC20(pair.token0()).safeTransfer(msgSender, amount0);
