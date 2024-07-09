@@ -219,10 +219,13 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
                     block.timestamp + 600
                 );
 
-                IMemeLiquidProof(pool.liquidProof).mint(msgSender, liquidity * permanentLockRatio / RATIO);
+                uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
+                IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
                 unchecked {
                     pool.totalFund += fund;
                 }
+
+                emit ClaimToken(poolId, msgSender, fund, baseAmount, deployAmount, proofAmount);
             } else {
                  IERC20(USDB).safeTransfer(msgSender, fund);
             }
@@ -259,10 +262,13 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
                     block.timestamp + 600
                 );
 
-                IMemeLiquidProof(pool.liquidProof).mint(msgSender, liquidity * permanentLockRatio / RATIO);
+                uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
+                IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
                 unchecked {
                     pool.totalFund += fund;
                 }
+
+                emit ClaimToken(poolId, msgSender, fund, baseAmount, deployAmount, proofAmount);
             } else {
                 Address.sendValue(payable(msgSender), fund);
             }

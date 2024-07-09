@@ -92,6 +92,8 @@ interface IMemeverse {
     function setMaxfundBasedAmount(uint128 _maxfundBasedAmount) external;
 
 
+    event ClaimToken(uint256 indexed poolId, address indexed msgSender, uint256 fund, uint256 baseAmount, uint256 deployAmount, uint256 proofAmount);
+
     event ClaimPoolLiquidity(uint256 indexed poolId, address account, uint256 lpAmount);
 
     event ClaimTransactionFees(uint256 indexed poolId, address indexed owner, address token, uint256 amount0, uint256 amount1);
