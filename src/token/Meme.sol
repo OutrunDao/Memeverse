@@ -57,7 +57,7 @@ contract Meme is IMeme, Ownable, GasManagerable {
     }
 
     function decimals() public view returns (uint8) {
-        return _decimals;
+        return 18;
     }
 
     function totalSupply() public view override returns (uint256) {
