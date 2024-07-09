@@ -45,7 +45,7 @@ contract MemeLiquidProof is IMemeLiquidProof, GasManagerable {
         return _symbol;
     }
 
-    function decimals() public view returns (uint8) {
+    function decimals() public pure returns (uint8) {
         return 18;
     }
 
