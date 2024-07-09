@@ -71,8 +71,8 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         address _osUSD,
         address _orETHStakeManager,
         address _orUSDStakeManager,
-        address _outswapV1Router,
-        address _outswapV1Factory
+        address _outswapV1Factory,
+        address _outswapV1Router
     ) Ownable(_owner) GasManagerable(_gasManager) {
         orETH = _orETH;
         osETH = _osETH;
@@ -80,14 +80,13 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         osUSD = _osUSD;
         orETHStakeManager = _orETHStakeManager;
         orUSDStakeManager = _orUSDStakeManager;
-        outswapV1Router = _outswapV1Router;
         outswapV1Factory = _outswapV1Factory;
+        outswapV1Router = _outswapV1Router;
 
         IERC20(orETH).approve(_orETHStakeManager, type(uint256).max);
         IERC20(osETH).approve(_outswapV1Router, type(uint256).max);
         IERC20(orUSD).approve(_orUSDStakeManager, type(uint256).max);
         IERC20(osUSD).approve(_outswapV1Router, type(uint256).max);
-
     }
 
     function launchPools(uint256 poolId) external view override returns (LaunchPool memory) {
