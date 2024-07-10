@@ -19,8 +19,6 @@ import "../utils/OutswapV1Library02.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/Meme.sol";
 import "../token/MemeLiquidProof.sol";
-import "../token/interfaces/IMeme.sol";
-import "../token/interfaces/IMemeLiquidProof.sol";
 
 /**
  * @title Trapping into the memeverse
@@ -104,12 +102,12 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
 
     function initialize(
         address _reserveFundManager,
+        uint256 _genesisFee,
         uint256 _reserveFundRatio,
         uint256 _permanentLockRatio,
         uint256 _maxEarlyUnlockRatio,
         uint256 _minEthFund,
         uint256 _minUsdbFund,
-        uint256 _genesisFee,
         uint128 _minDurationDays,
         uint128 _maxDurationDays,
         uint128 _minLockupDays,
@@ -118,20 +116,21 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         uint128 _maxfundBasedAmount
     ) external override initializer {
         reserveFundManager = _reserveFundManager;
+        genesisFee = _genesisFee;
+        reserveFundRatio = _reserveFundRatio;
+        permanentLockRatio = _permanentLockRatio;
+        maxEarlyUnlockRatio = _maxEarlyUnlockRatio;
+        minEthFund = _minEthFund;
+        minUsdbFund = _minUsdbFund;
+        minDurationDays = _minDurationDays;
+        maxDurationDays = _maxDurationDays;
+        minLockupDays = _minLockupDays;
+        maxLockupDays = _maxLockupDays;
+        minfundBasedAmount = _minfundBasedAmount;
+        maxfundBasedAmount = _maxfundBasedAmount;
+
         IERC20(osETH).approve(_reserveFundManager, type(uint256).max);
         IERC20(osUSD).approve(_reserveFundManager, type(uint256).max);
-        setGenesisFee(_genesisFee);
-        setReserveFundRatio(_reserveFundRatio);
-        setPermanentLockRatio(_permanentLockRatio);
-        setMaxEarlyUnlockRatio(_maxEarlyUnlockRatio);
-        setMinEthFund(_minEthFund);
-        setMinUsdbFund(_minUsdbFund);
-        setMinDurationDays(_minDurationDays);
-        setMaxDurationDays(_maxDurationDays);
-        setMinLockupDays(_minLockupDays);
-        setMaxLockupDays(_maxLockupDays);
-        setMinfundBasedAmount(_minfundBasedAmount);
-        setMaxfundBasedAmount(_maxfundBasedAmount);
     }
 
     /**
@@ -371,108 +370,83 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
     }
 
     /**
-     * @param poolId - LaunchPool id
-     * @param names - Attributes names
-     * @param datas - Attributes datas
+     * @dev Set genesis memeverse fee
+     * @param _genesisFee - Genesis memeverse fee
      */
-    function setAttributes(uint256 poolId, string[] calldata names, bytes[] calldata datas) external override {
-        LaunchPool storage pool = _launchPools[poolId];
-        require(msg.sender == pool.owner, "Permission denied");
-        uint256 length = names.length;
-        require(length == datas.length, "Invalid attributes");
-
-        address token = pool.token;
-        for(uint256 i = 0; i < length; i++) {
-            bytes calldata data = datas[i];
-            require(data.length < 257, "Data too long");
-            IMeme(token).setAttribute(names[i], data);
-        }
-    }
-
-    /**
-     *@param _genesisFee - Genesis memeverse fee
-     */
-    function setGenesisFee(uint256 _genesisFee) public override onlyOwner {
+    function setGenesisFee(uint256 _genesisFee) external override onlyOwner {
         genesisFee = _genesisFee;
     }
 
     /**
+     * @dev Set reserve fund ratio
      * @param _reserveFundRatio - Reserve fund ratio
      */
-    function setReserveFundRatio(uint256 _reserveFundRatio) public override onlyOwner {
+    function setReserveFundRatio(uint256 _reserveFundRatio) external override onlyOwner {
         require(_reserveFundRatio <= RATIO, "Ratio too high");
         reserveFundRatio = _reserveFundRatio;
     }
 
     /**
+     * @dev Set permanent lock ratio
      * @param _permanentLockRatio - Permanent lock ratio
      */
-    function setPermanentLockRatio(uint256 _permanentLockRatio) public override onlyOwner {
+    function setPermanentLockRatio(uint256 _permanentLockRatio) external override onlyOwner {
         require(_permanentLockRatio <= RATIO, "Ratio too high");
         permanentLockRatio = _permanentLockRatio;
     }
 
     /**
+     * @dev Set max early unlock ratio
      * @param _maxEarlyUnlockRatio - Max early unlock ratio
      */
-    function setMaxEarlyUnlockRatio(uint256 _maxEarlyUnlockRatio) public override onlyOwner {
+    function setMaxEarlyUnlockRatio(uint256 _maxEarlyUnlockRatio) external override onlyOwner {
         require(_maxEarlyUnlockRatio <= RATIO, "Ratio too high");
         maxEarlyUnlockRatio = _maxEarlyUnlockRatio;
     }
 
     /**
-     * @param _minEthFund - Min eth fund staked amount to enable transfer token
+     * @dev Set min eth fund staked amount to enable transfer token
+     * @param _minEthFund - Min eth fund staked amount
      */
-    function setMinEthFund(uint256 _minEthFund) public override onlyOwner {
+    function setMinEthFund(uint256 _minEthFund) external override onlyOwner {
         minEthFund = _minEthFund;
     }
 
     /**
-     * @param _minUsdbFund -Min usdb fund staked amount to enable transfer token
+     * @dev Set min usdb fund staked amount to enable transfer token
+     * @param _minUsdbFund - Min usdb fund staked amount
      */
-    function setMinUsdbFund(uint256 _minUsdbFund) public override onlyOwner {
+    function setMinUsdbFund(uint256 _minUsdbFund) external override onlyOwner {
         minUsdbFund = _minUsdbFund;
     }
 
     /**
+     * @dev Set launch pool duration days range
      * @param _minDurationDays - Min launch pool duration days
-     */
-    function setMinDurationDays(uint128 _minDurationDays) public override onlyOwner {
-        minDurationDays = _minDurationDays;
-    }
-
-    /**
      * @param _maxDurationDays - Max launch pool duration days
      */
-    function setMaxDurationDays(uint128 _maxDurationDays) public override onlyOwner {
+    function setDurationDaysRange(uint128 _minDurationDays, uint128 _maxDurationDays) external override onlyOwner {
+        minDurationDays = _minDurationDays;
         maxDurationDays = _maxDurationDays;
     }
 
     /**
+     * @dev Set liquidity lockup days range
      * @param _minLockupDays - Min liquidity lockup days
-     */
-    function setMinLockupDays(uint128 _minLockupDays) public override onlyOwner {
-        minLockupDays = _minLockupDays;
-    }
-
-    /**
      * @param _maxLockupDays - Max liquidity lockup days
      */
-    function setMaxLockupDays(uint128 _maxLockupDays) public override onlyOwner {
+    function setLockupDaysRange(uint128 _minLockupDays, uint128 _maxLockupDays) external override onlyOwner {
+        minLockupDays = _minLockupDays;
         maxLockupDays = _maxLockupDays;
     }
 
     /**
+     * @dev Set token amount based fund range
      * @param _minfundBasedAmount - Min token amount based fund
-     */
-    function setMinfundBasedAmount(uint128 _minfundBasedAmount) public override onlyOwner {
-        minfundBasedAmount = _minfundBasedAmount;
-    }
-
-    /**
      * @param _maxfundBasedAmount - Max token amount based fund
      */
-    function setMaxfundBasedAmount(uint128 _maxfundBasedAmount) public override onlyOwner {
+    function setFundBasedAmountRange(uint128 _minfundBasedAmount, uint128 _maxfundBasedAmount) external override onlyOwner {
+        minfundBasedAmount = _minfundBasedAmount;
         maxfundBasedAmount = _maxfundBasedAmount;
     }
 }

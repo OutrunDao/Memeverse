@@ -14,14 +14,11 @@ abstract contract GasManagerable {
 
     event ClaimMaxGas(address indexed recipient, uint256 gasAmount);
 
-    event GasManagerTransferred(address indexed previousGasManager, address indexed newGasManager);
-
     constructor(address initialGasManager) {
         if (initialGasManager == address(0)) {
             revert ZeroAddress();
         }
-        _transferGasManager(initialGasManager);
-
+        gasManager = initialGasManager;
         BLAST.configureClaimableGas();
     }
 
@@ -36,9 +33,8 @@ abstract contract GasManagerable {
     /**
      * @dev Read all gas remaining balance 
      */
-    function readGasBalance() external view onlyGasManager returns (uint256) {
-        (, uint256 gasBanlance, , ) = BLAST.readGasParams(address(this));
-        return gasBanlance;
+    function readGasBalance() external view onlyGasManager returns (uint256 gasBanlance) {
+        (, gasBanlance, , ) = BLAST.readGasParams(address(this));
     }
 
     /**
@@ -54,16 +50,10 @@ abstract contract GasManagerable {
         emit ClaimMaxGas(recipient, gasAmount);
     }
 
-    function transferGasManager(address newGasManager) public onlyGasManager {
+    function transferGasManager(address newGasManager) external onlyGasManager {
         if (newGasManager == address(0)) {
             revert ZeroAddress();
         }
-        _transferGasManager(newGasManager);
-    }
-
-    function _transferGasManager(address newGasManager) internal {
-        address oldGasManager = gasManager;
         gasManager = newGasManager;
-        emit GasManagerTransferred(oldGasManager, newGasManager);
     }
 }

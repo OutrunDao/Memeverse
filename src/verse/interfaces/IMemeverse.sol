@@ -20,6 +20,7 @@ interface IMemeverse {
         bool ethOrUsdb;                 // Type of deposited funds, true --> usdb, false --> eth
     }
 
+
     function launchPools(uint256 poolId) external view returns (LaunchPool memory);
 
     function tempFunds(uint256 poolId) external view returns (uint256);
@@ -65,7 +66,7 @@ interface IMemeverse {
         bool ethOrUsdb
     ) external payable returns (uint256 poolId);
 
-    function setAttributes(uint256 poolId, string[] calldata names, bytes[] calldata datas) external;
+    function setGenesisFee(uint256 _genesisFee) external;
 
     function setReserveFundRatio(uint256 _reserveFundRatio) external;
 
@@ -77,19 +78,11 @@ interface IMemeverse {
 
     function setMinUsdbFund(uint256 _minUsdbFund) external;
 
-    function setGenesisFee(uint256 _genesisFee) external;
+    function setDurationDaysRange(uint128 _minDurationDays, uint128 _maxDurationDays) external;
 
-    function setMinDurationDays(uint128 _minDurationDays) external;
+    function setLockupDaysRange(uint128 _minLockupDays, uint128 _maxLockupDays) external;
 
-    function setMaxDurationDays(uint128 _maxDurationDays) external;
-
-    function setMinLockupDays(uint128 _minLockupDays) external;
-
-    function setMaxLockupDays(uint128 _maxLockupDays) external;
-
-    function setMinfundBasedAmount(uint128 _minfundBasedAmount) external;
-
-    function setMaxfundBasedAmount(uint128 _maxfundBasedAmount) external;
+    function setFundBasedAmountRange(uint128 _minfundBasedAmount, uint128 _maxfundBasedAmount) external;
 
 
     event ClaimToken(uint256 indexed poolId, address indexed msgSender, uint256 fund, uint256 baseAmount, uint256 deployAmount, uint256 proofAmount);
