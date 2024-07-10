@@ -8,9 +8,9 @@ abstract contract GasManagerable {
 
     address private _gasManager;
 
-    error UnauthorizedAccount(address account);
+    error ZeroAddress();
 
-    error InvalidGasManager(address gasManager);
+    error UnauthorizedAccount(address account);
 
     event ClaimMaxGas(address indexed recipient, uint256 gasAmount);
 
@@ -18,7 +18,7 @@ abstract contract GasManagerable {
 
     constructor(address initialGasManager) {
         if (initialGasManager == address(0)) {
-            revert InvalidGasManager(address(0));
+            revert ZeroAddress();
         }
         _transferGasManager(initialGasManager);
 
@@ -33,7 +33,7 @@ abstract contract GasManagerable {
         _;
     }
 
-    function gasManager() public view virtual returns (address) {
+    function gasManager() public view returns (address) {
         return _gasManager;
     }
 
@@ -50,18 +50,22 @@ abstract contract GasManagerable {
      * @param recipient - Address of receive gas
      */
     function claimMaxGas(address recipient) external onlyGasManager returns (uint256 gasAmount) {
+        if (recipient == address(0)) {
+            revert ZeroAddress();
+        }
+
         gasAmount = BLAST.claimMaxGas(address(this), recipient);
         emit ClaimMaxGas(recipient, gasAmount);
     }
 
-    function transferGasManager(address newGasManager) public virtual onlyGasManager {
+    function transferGasManager(address newGasManager) public onlyGasManager {
         if (newGasManager == address(0)) {
-            revert InvalidGasManager(address(0));
+            revert ZeroAddress();
         }
         _transferGasManager(newGasManager);
     }
 
-    function _transferGasManager(address newGasManager) internal virtual {
+    function _transferGasManager(address newGasManager) internal {
         address oldGasManager = _gasManager;
         _gasManager = newGasManager;
         emit GasManagerTransferred(oldGasManager, newGasManager);
