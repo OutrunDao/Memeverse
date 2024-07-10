@@ -8,169 +8,177 @@ import "../blast/GasManagerable.sol";
  * @title Memeverse Liquidity proof Token Standard
  */
 contract MemeLiquidProof is IMemeLiquidProof, GasManagerable {
-    string private _name;
-    string private _symbol;
-    uint8 private _decimals;
-    uint256 private _totalSupply;
-    address private _memeverse;
+    uint256 internal immutable INITIAL_CHAIN_ID;
+    bytes32 internal immutable INITIAL_DOMAIN_SEPARATOR;
 
-    mapping(address account => uint256) private _balances;
-    mapping(address account => mapping(address spender => uint256)) private _allowances;
+    string public name;
+    string public symbol;
+    uint8 public immutable decimals;
+    uint256 public totalSupply;
+    address public memeverse;
+
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+    mapping(address => uint256) public nonces;
 
     modifier onlyMemeverse() {
-        require(msg.sender == _memeverse, "Only memeverse can call");
+        require(msg.sender == memeverse, "Only memeverse");
         _;
     }
 
     constructor(
-        string memory name_, 
-        string memory symbol_, 
-        address memeverse_, 
-        address gasManager_
-    ) GasManagerable(gasManager_) {
-        _name = name_;
-        _symbol = symbol_;
-        _memeverse = memeverse_;
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        address _memeverse, 
+        address _gasManager
+    ) GasManagerable(_gasManager) {
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
+        memeverse = _memeverse;
+
+        INITIAL_CHAIN_ID = block.chainid;
+        INITIAL_DOMAIN_SEPARATOR = computeDomainSeparator();
     }
 
-    function _msgSender() internal view returns (address) {
-        return msg.sender;
+    function approve(address spender, uint256 amount) public virtual returns (bool) {
+        allowance[msg.sender][spender] = amount;
+
+        emit Approval(msg.sender, spender, amount);
+        return true;
     }
 
-    function name() public view returns (string memory) {
-        return _name;
+    function transfer(address to, uint256 amount) public virtual returns (bool) {
+        balanceOf[msg.sender] -= amount;
+
+        unchecked {
+            balanceOf[to] += amount;
+        }
+
+        if (to == address(0)) {
+            unchecked {
+                totalSupply -= amount;
+            }
+        }
+
+        emit Transfer(msg.sender, to, amount);
+        return true;
     }
 
-    function symbol() public view returns (string memory) {
-        return _symbol;
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual returns (bool) {
+        uint256 allowed = allowance[from][msg.sender];
+
+        if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
+
+        balanceOf[from] -= amount;
+
+        unchecked {
+            balanceOf[to] += amount;
+        }
+
+        if (to == address(0)) {
+            unchecked {
+                totalSupply -= amount;
+            }
+        }
+
+        emit Transfer(from, to, amount);
+        return true;
     }
 
-    function decimals() public pure returns (uint8) {
-        return 18;
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual {
+        require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
+
+        unchecked {
+            address recoveredAddress = ecrecover(
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        DOMAIN_SEPARATOR(),
+                        keccak256(
+                            abi.encode(
+                                keccak256(
+                                    "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+                                ),
+                                owner,
+                                spender,
+                                value,
+                                nonces[owner]++,
+                                deadline
+                            )
+                        )
+                    )
+                ),
+                v,
+                r,
+                s
+            );
+
+            require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNER");
+
+            allowance[recoveredAddress][spender] = value;
+        }
+
+        emit Approval(owner, spender, value);
     }
 
-    function totalSupply() public view override returns (uint256) {
-        return _totalSupply;
+    function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
+        return block.chainid == INITIAL_CHAIN_ID ? INITIAL_DOMAIN_SEPARATOR : computeDomainSeparator();
     }
 
-    function memeverse() public view override returns (address) {
-        return _memeverse;
-    }
-
-    function balanceOf(address account) public view override returns (uint256) {
-        return _balances[account];
-    }
-
-    function allowance(address owner, address spender) public view override returns (uint256) {
-        return _allowances[owner][spender];
+    function computeDomainSeparator() internal view virtual returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                    keccak256(bytes(name)),
+                    keccak256("1"),
+                    block.chainid,
+                    address(this)
+                )
+            );
     }
 
     function mint(address account, uint256 amount) external override onlyMemeverse {
         _mint(account, amount);
     }
 
-    function burn(address account, uint256 value) external onlyMemeverse returns (bool) {
-        require(balanceOf(account) >= value, "Insufficient balance");
-        _burn(account, value);
+    function burn(address account, uint256 amount) external onlyMemeverse returns (bool) {
+        require(balanceOf[account] >= amount, "Insufficient balance");
+        _burn(account, amount);
         return true;
     }
 
-    function transfer(address to, uint256 value) public override returns (bool) {
-        address owner = _msgSender();
-        _transfer(owner, to, value);
-        return true;
+    function _mint(address to, uint256 amount) internal virtual {
+        totalSupply += amount;
+
+        unchecked {
+            balanceOf[to] += amount;
+        }
+
+        emit Transfer(address(0), to, amount);
     }
 
-    function approve(address spender, uint256 value) public override returns (bool) {
-        address owner = _msgSender();
-        _approve(owner, spender, value);
-        return true;
-    }
+    function _burn(address from, uint256 amount) internal virtual {
+        balanceOf[from] -= amount;
 
-    function transferFrom(address from, address to, uint256 value) public override returns (bool) {
-        address spender = _msgSender();
-        _spendAllowance(from, spender, value);
-        _transfer(from, to, value);
-        return true;
-    }
-
-    function _transfer(address from, address to, uint256 value) internal {
-        if (from == address(0)) {
-            revert ERC20InvalidSender(address(0));
-        }
-        if (to == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
+        unchecked {
+            totalSupply -= amount;
         }
 
-        _update(from, to, value);
-    }
-
-    function _update(address from, address to, uint256 value) internal {
-        if (from == address(0)) {
-            _totalSupply += value;
-        } else {
-            uint256 fromBalance = _balances[from];
-            if (fromBalance < value) {
-                revert ERC20InsufficientBalance(from, fromBalance, value);
-            }
-            unchecked {
-                _balances[from] = fromBalance - value;
-            }
-        }
-
-        if (to == address(0)) {
-            unchecked {
-                _totalSupply -= value;
-            }
-        } else {
-            unchecked {
-                _balances[to] += value;
-            }
-        }
-
-        emit Transfer(from, to, value);
-    }
-
-    function _mint(address account, uint256 value) internal {
-        if (account == address(0)) {
-            revert ERC20InvalidReceiver(address(0));
-        }
-        _update(address(0), account, value);
-    }
-
-    function _burn(address account, uint256 value) internal {
-        if (account == address(0)) {
-            revert ERC20InvalidSender(address(0));
-        }
-        _update(account, address(0), value);
-    }
-
-    function _approve(address owner, address spender, uint256 value) internal {
-        _approve(owner, spender, value, true);
-    }
-
-    function _approve(address owner, address spender, uint256 value, bool emitEvent) internal {
-        if (owner == address(0)) {
-            revert ERC20InvalidApprover(address(0));
-        }
-        if (spender == address(0)) {
-            revert ERC20InvalidSpender(address(0));
-        }
-        _allowances[owner][spender] = value;
-        if (emitEvent) {
-            emit Approval(owner, spender, value);
-        }
-    }
-
-    function _spendAllowance(address owner, address spender, uint256 value) internal {
-        uint256 currentAllowance = allowance(owner, spender);
-        if (currentAllowance != type(uint256).max) {
-            if (currentAllowance < value) {
-                revert ERC20InsufficientAllowance(spender, currentAllowance, value);
-            }
-            unchecked {
-                _approve(owner, spender, currentAllowance - value, false);
-            }
-        }
+        emit Transfer(from, address(0), amount);
     }
 }
