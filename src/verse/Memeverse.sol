@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Multicall.sol";
 
 import "./interfaces/IMemeverse.sol";
 import "./interfaces/IReserveFundManager.sol";
@@ -28,7 +27,7 @@ import "../token/interfaces/IMemeLiquidProof.sol";
 /**
  * @title Trapped into the memeverse
  */
-contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializable, AutoIncrementId {
+contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIncrementId {
     using SafeERC20 for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -44,12 +43,12 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     address public immutable outswapV1Factory;
     
     address public reserveFundManager;
+    uint256 public genesisFee;
     uint256 public reserveFundRatio;
     uint256 public permanentLockRatio;
     uint256 public maxEarlyUnlockRatio;
     uint256 public minEthFund;
     uint256 public minUsdbFund;
-    uint256 public genesisFee;
     uint128 public minDurationDays;
     uint128 public maxDurationDays;
     uint128 public minLockupDays;
@@ -123,12 +122,12 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         reserveFundManager = _reserveFundManager;
         IERC20(osETH).approve(_reserveFundManager, type(uint256).max);
         IERC20(osUSD).approve(_reserveFundManager, type(uint256).max);
+        setGenesisFee(_genesisFee);
         setReserveFundRatio(_reserveFundRatio);
         setPermanentLockRatio(_permanentLockRatio);
         setMaxEarlyUnlockRatio(_maxEarlyUnlockRatio);
         setMinEthFund(_minEthFund);
         setMinUsdbFund(_minUsdbFund);
-        setGenesisFee(_genesisFee);
         setMinDurationDays(_minDurationDays);
         setMaxDurationDays(_maxDurationDays);
         setMinLockupDays(_minLockupDays);
@@ -182,97 +181,67 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
         _tempFunds[poolId] -= fund;
         _tempFundPool[beacon] = 0;
 
-        uint128 endTime = pool.endTime;
         uint256 lockupDays = pool.lockupDays;
         uint256 currentTime = block.timestamp;
         bool ethOrUsdb = pool.ethOrUsdb;
-        if (ethOrUsdb) {
-            if (currentTime < endTime || pool.totalFund < minUsdbFund) {
-                // Stake
-                IORUSD(orUSD).deposit(fund);
-                (uint256 amountInOSUSD,) = IORUSDStakeManager(orUSDStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
-                
-                // Deposit to reserveFund
-                uint256 reserveFundAmount = amountInOSUSD * reserveFundRatio / RATIO;
-                address token = pool.token;
-                uint256 fundBasedAmount = pool.fundBasedAmount;
-                uint256 basePriceX128 = (RATIO - reserveFundRatio) * FixedPoint128.Q128 / RATIO / fundBasedAmount / 2;
-                IReserveFundManager(reserveFundManager).deposit(token, reserveFundAmount, basePriceX128, ethOrUsdb);
-                amountInOSUSD -= reserveFundAmount;
 
-                // Mint token
-                uint256 baseAmount = amountInOSUSD * fundBasedAmount;
-                uint256 deployAmount = baseAmount << 2;
-                IMeme(token).mint(msgSender, baseAmount);
-                IMeme(token).mint(address(this), deployAmount);
-
-                // Deploy liquidity
-                IERC20(token).approve(outswapV1Router, deployAmount);
-                (,, uint256 liquidity) = IOutswapV1Router(outswapV1Router).addLiquidity(
-                    osUSD,
-                    token,
-                    amountInOSUSD,
-                    deployAmount,
-                    amountInOSUSD,
-                    deployAmount,
-                    address(this),
-                    block.timestamp + 600
-                );
-
-                uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
-                IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
-                unchecked {
-                    pool.totalFund += fund;
-                }
-
-                emit ClaimToken(poolId, msgSender, fund, baseAmount, deployAmount, proofAmount);
-            } else {
-                 IERC20(USDB).safeTransfer(msgSender, fund);
-            }
-        } else {
-            if (currentTime < endTime || pool.totalFund < minEthFund) {
-                // Stake
-                IORETH(orETH).deposit{value: fund}();
-                (uint256 amountInOSETH,) = IORETHStakeManager(orETHStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
-               
-                // Deposit to reserveFund
-                uint256 reserveFundAmount = amountInOSETH * reserveFundRatio / RATIO;
-                address token = pool.token;
-                uint256 fundBasedAmount = pool.fundBasedAmount;
-                uint256 basePriceX128 = (RATIO - reserveFundRatio) * FixedPoint128.Q128 / RATIO / fundBasedAmount / 2;
-                IReserveFundManager(reserveFundManager).deposit(token, reserveFundAmount, basePriceX128, ethOrUsdb);
-                amountInOSETH -= reserveFundAmount;
-
-                // Mint token
-                uint256 baseAmount = amountInOSETH * fundBasedAmount;
-                uint256 deployAmount = baseAmount << 2;
-                IMeme(token).mint(msgSender, baseAmount);
-                IMeme(token).mint(address(this), deployAmount);
-
-                // Deploy liquidity
-                IERC20(token).approve(outswapV1Router, deployAmount);
-                (,, uint256 liquidity) = IOutswapV1Router(outswapV1Router).addLiquidity(
-                    osETH,
-                    token,
-                    amountInOSETH,
-                    deployAmount,
-                    amountInOSETH,
-                    deployAmount,
-                    address(this),
-                    block.timestamp + 600
-                );
-
-                uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
-                IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
-                unchecked {
-                    pool.totalFund += fund;
-                }
-
-                emit ClaimToken(poolId, msgSender, fund, baseAmount, deployAmount, proofAmount);
+        if (currentTime >= pool.endTime && pool.totalFund >= (ethOrUsdb ? minUsdbFund : minEthFund)) {
+            if (ethOrUsdb) {
+                IERC20(USDB).safeTransfer(msgSender, fund);
             } else {
                 Address.sendValue(payable(msgSender), fund);
             }
+            return;
         }
+
+        address token = pool.token;
+        uint256 fundBasedAmount = pool.fundBasedAmount;
+        uint256 amountInOS;
+        uint256 reserveFundAmount;
+
+        // Stake
+        if (ethOrUsdb) {
+            IORUSD(orUSD).deposit(fund);
+            (amountInOS,) = IORUSDStakeManager(orUSDStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
+        } else {
+            IORETH(orETH).deposit{value: fund}();
+            (amountInOS,) = IORETHStakeManager(orETHStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
+        }
+        
+        // Deposit to reserveFund
+        reserveFundAmount = amountInOS * reserveFundRatio / RATIO;
+        uint256 basePriceX128 = (RATIO - reserveFundRatio) * FixedPoint128.Q128 / RATIO / fundBasedAmount / 2;
+        IReserveFundManager(reserveFundManager).deposit(token, reserveFundAmount, basePriceX128, ethOrUsdb);
+        amountInOS -= reserveFundAmount;
+
+        // Mint token
+        uint256 baseAmount = amountInOS * fundBasedAmount;
+        uint256 deployAmount = baseAmount << 2;
+        IMeme(token).mint(msgSender, baseAmount);
+        IMeme(token).mint(address(this), deployAmount);
+        
+        // Deploy liquidity
+        IERC20(token).approve(outswapV1Router, deployAmount);
+        (,, uint256 liquidity) = IOutswapV1Router(outswapV1Router).addLiquidity(
+            ethOrUsdb ? osUSD : osETH,
+            token,
+            amountInOS,
+            deployAmount,
+            amountInOS,
+            deployAmount,
+            address(this),
+            block.timestamp + 600
+        );
+
+        // Mint liquidity proof token
+        uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
+        IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
+
+        unchecked {
+            pool.totalFund += fund;
+        }
+
+        emit ClaimToken(poolId, msgSender, fund, baseAmount, deployAmount, proofAmount);
     }
 
     /**
@@ -281,13 +250,7 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
      */
     function enablePoolTokenTransfer(uint256 poolId) external override {
         LaunchPool storage pool = _launchPools[poolId];
-        uint256 totalFund = pool.totalFund;
-
-        if (pool.ethOrUsdb) {
-            require(totalFund >= minUsdbFund, "Insufficient staked fund");
-        } else {
-            require(totalFund >= minEthFund, "Insufficient staked fund");
-        }
+        require(pool.totalFund >= (pool.ethOrUsdb ? minUsdbFund : minEthFund), "Insufficient staked fund");
 
         address token = pool.token;
         require(!IMeme(token).transferable(), "Already enable transfer");
@@ -428,6 +391,13 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
     }
 
     /**
+     *@param _genesisFee - Genesis memeverse fee
+     */
+    function setGenesisFee(uint256 _genesisFee) public override onlyOwner {
+        genesisFee = _genesisFee;
+    }
+
+    /**
      * @param _reserveFundRatio - Reserve fund ratio
      */
     function setReserveFundRatio(uint256 _reserveFundRatio) public override onlyOwner {
@@ -463,13 +433,6 @@ contract Memeverse is IMemeverse, Multicall, Ownable, GasManagerable, Initializa
      */
     function setMinUsdbFund(uint256 _minUsdbFund) public override onlyOwner {
         minUsdbFund = _minUsdbFund;
-    }
-
-    /**
-     *@param _genesisFee - Genesis memeverse fee
-     */
-    function setGenesisFee(uint256 _genesisFee) public override onlyOwner {
-        genesisFee = _genesisFee;
     }
 
     /**

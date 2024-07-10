@@ -20,6 +20,13 @@ interface IMeme is IERC20, IERC20Errors {
     function getAttributes(string calldata name) external view returns (bytes memory);
 
     /**
+     * @dev Set attribute
+     * @param name - Attribute name
+     * @param data - Attribute data
+     */
+    function setAttribute(string calldata name, bytes calldata data) external;
+
+    /**
      * @dev Enable token transfer
      */
     function enableTransfer() external;
@@ -27,11 +34,4 @@ interface IMeme is IERC20, IERC20Errors {
     function mint(address account, uint256 amount) external;
 
     function burn(address account, uint256 value) external returns (bool);
-
-    /**
-     * @dev Set attribute
-     * @param name - Attribute name
-     * @param data - Attribute data
-     */
-    function setAttribute(string calldata name, bytes calldata data) external;
 }

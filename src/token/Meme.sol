@@ -131,7 +131,7 @@ contract Meme is IMeme, Ownable, GasManagerable {
         return true;
     }
 
-    function setAttribute(string calldata attributeName, bytes calldata data) external override onlyMemeverse {
+    function setAttribute(string calldata attributeName, bytes calldata data) external override onlyOwner {
         require(data.length < 257, "Data too long");
         _attributes[attributeName] = data;
     }

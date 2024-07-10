@@ -24,11 +24,6 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
     uint256 public purchaseFeeRatio;
     mapping(address token => ReserveFund) private _reserveFunds;
 
-    modifier onlyMemeverse() {
-        require(msg.sender == memeverse, "Only memeverse");
-        _;
-    }
-
     constructor(
         address _owner,
         address _gasManager,
@@ -52,7 +47,8 @@ contract ReserveFundManager is IReserveFundManager, Ownable, GasManagerable {
      * @param basePriceX128 - Token base priceX128(mul 2** 128)
      * @param ethOrUsdb - Type of deposited funds, true --> usdb, false --> eth
      */
-    function deposit(address token, uint256 fundAmount, uint256 basePriceX128, bool ethOrUsdb) external override onlyMemeverse {
+    function deposit(address token, uint256 fundAmount, uint256 basePriceX128, bool ethOrUsdb) external override {
+        require(msg.sender == memeverse, "Only memeverse");
         address fundToken = ethOrUsdb ? osUSD : osETH;
         IERC20(fundToken).safeTransferFrom(msg.sender, address(this), fundAmount);
 
