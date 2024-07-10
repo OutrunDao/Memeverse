@@ -1,34 +1,32 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./interfaces/IMemeverse.sol";
 import "./interfaces/IReserveFundManager.sol";
 import "../blast/GasManagerable.sol";
+import "../common/IORETH.sol";
+import "../common/IORUSD.sol";
+import "../common/IOutswapV1Pair.sol";
+import "../common/IOutswapV1Router.sol";
+import "../common/IORETHStakeManager.sol";
+import "../common/IORUSDStakeManager.sol";
 import "../utils/FixedPoint128.sol";
 import "../utils/Initializable.sol";
-import "../utils/AutoIncrementId.sol";
-import "../utils/IORETH.sol";
-import "../utils/IORUSD.sol";
+import "../utils/SafeTransferLib.sol";
 import "../utils/OutswapV1Library02.sol";
-import "../utils/IOutswapV1Router.sol";
-import "../utils/IOutswapV1Pair.sol";
-import "../utils/IORETHStakeManager.sol";
-import "../utils/IORUSDStakeManager.sol";
+import "../utils/AutoIncrementId.sol";
 import "../token/Meme.sol";
 import "../token/MemeLiquidProof.sol";
 import "../token/interfaces/IMeme.sol";
 import "../token/interfaces/IMemeLiquidProof.sol";
 
 /**
- * @title Trapped into the memeverse
+ * @title Trapping into the memeverse
  */
 contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIncrementId {
-    using SafeERC20 for IERC20;
+    using SafeTransferLib for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant DAY = 24 * 3600;
@@ -189,7 +187,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
             if (ethOrUsdb) {
                 IERC20(USDB).safeTransfer(msgSender, fund);
             } else {
-                Address.sendValue(payable(msgSender), fund);
+                SafeTransferLib.safeTransferETH(payable(msgSender), fund);
             }
             return;
         }
@@ -253,7 +251,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         require(pool.totalFund >= (pool.ethOrUsdb ? minUsdbFund : minEthFund), "Insufficient staked fund");
 
         address token = pool.token;
-        require(!IMeme(token).transferable(), "Already enable transfer");
+        require(!IMeme(token).isTransferable(), "Already enable transfer");
         require(block.timestamp >= pool.endTime, "Pool not closed");
 
         IMeme(token).enableTransfer();
@@ -344,10 +342,11 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
 
         // Deploy token
         address msgSender = msg.sender;
-        address token = address(new Meme(name, symbol, maxSupply, address(this), reserveFundManager, msgSender));
+        address token = address(new Meme(name, symbol, 18, maxSupply, address(this), reserveFundManager, msgSender));
         address liquidProof = address(new MemeLiquidProof(
             string(abi.encodePacked(name, " Liquid")),
             string(abi.encodePacked(symbol, " LIQUID")),
+            18,
             address(this),
             msgSender
         ));
