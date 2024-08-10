@@ -8,14 +8,14 @@ import "./interfaces/IReserveFundManager.sol";
 import "../blast/GasManagerable.sol";
 import "../common/IORETH.sol";
 import "../common/IORUSD.sol";
-import "../common/IOutswapV1Pair.sol";
-import "../common/IOutswapV1Router.sol";
+import "../common/IOutrunAMMPair.sol";
+import "../common/IOutrunAMMRouter.sol";
 import "../common/IORETHStakeManager.sol";
 import "../common/IORUSDStakeManager.sol";
 import "../utils/FixedPoint128.sol";
 import "../utils/Initializable.sol";
 import "../utils/SafeTransferLib.sol";
-import "../utils/OutswapV1Library02.sol";
+import "../utils/OutrunAMMLibrary.sol";
 import "../utils/AutoIncrementId.sol";
 import "../token/Meme.sol";
 import "../token/MemeLiquidProof.sol";
@@ -35,8 +35,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
     address public immutable osUSD;
     address public immutable orETHStakeManager;
     address public immutable orUSDStakeManager;
-    address public immutable outswapV1Router;
-    address public immutable outswapV1Factory;
+    address public immutable outrunAMMRouter;
+    address public immutable outrunAMMFactory;
     
     address public reserveFundManager;
     uint256 public genesisFee;
@@ -66,8 +66,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         address _osUSD,
         address _orETHStakeManager,
         address _orUSDStakeManager,
-        address _outswapV1Factory,
-        address _outswapV1Router
+        address _outrunAMMFactory,
+        address _outrunAMMRouter
     ) Ownable(_owner) GasManagerable(_gasManager) {
         orETH = _orETH;
         osETH = _osETH;
@@ -75,13 +75,13 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         osUSD = _osUSD;
         orETHStakeManager = _orETHStakeManager;
         orUSDStakeManager = _orUSDStakeManager;
-        outswapV1Factory = _outswapV1Factory;
-        outswapV1Router = _outswapV1Router;
+        outrunAMMFactory = _outrunAMMFactory;
+        outrunAMMRouter = _outrunAMMRouter;
 
         IERC20(orETH).approve(_orETHStakeManager, type(uint256).max);
-        IERC20(osETH).approve(_outswapV1Router, type(uint256).max);
+        IERC20(osETH).approve(_outrunAMMRouter, type(uint256).max);
         IERC20(orUSD).approve(_orUSDStakeManager, type(uint256).max);
-        IERC20(osUSD).approve(_outswapV1Router, type(uint256).max);
+        IERC20(osUSD).approve(_outrunAMMRouter, type(uint256).max);
     }
 
     function launchPools(uint256 poolId) external view override returns (LaunchPool memory) {
@@ -218,8 +218,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         IMeme(token).mint(address(this), deployAmount);
         
         // Deploy liquidity
-        IERC20(token).approve(outswapV1Router, deployAmount);
-        (,, uint256 liquidity) = IOutswapV1Router(outswapV1Router).addLiquidity(
+        IERC20(token).approve(outrunAMMRouter, deployAmount);
+        (,, uint256 liquidity) = IOutrunAMMRouter(outrunAMMRouter).addLiquidity(
             ethOrUsdb ? osUSD : osETH,
             token,
             amountInOS,
@@ -279,7 +279,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         }
         
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
-        address pairAddress = OutswapV1Library02.pairFor(outswapV1Factory, pool.token, lpBaseToken);
+        address pairAddress = OutrunAMMLibrary.pairFor(outrunAMMFactory, pool.token, lpBaseToken);
         IERC20(pairAddress).safeTransfer(msgSender, claimedLiquidity);
 
         emit ClaimPoolLiquidity(poolId, msgSender, claimedLiquidity);
@@ -295,8 +295,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         require(msgSender == pool.owner && block.timestamp > pool.endTime, "Permission denied");
 
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
-        address pairAddress = OutswapV1Library02.pairFor(outswapV1Factory, pool.token, lpBaseToken);
-        IOutswapV1Pair pair = IOutswapV1Pair(pairAddress);
+        address pairAddress = OutrunAMMLibrary.pairFor(outrunAMMFactory, pool.token, lpBaseToken);
+        IOutrunAMMPair pair = IOutrunAMMPair(pairAddress);
         (uint256 amount0, uint256 amount1) = pair.claimMakerFee();
         IERC20(pair.token0()).safeTransfer(msgSender, amount0);
         IERC20(pair.token1()).safeTransfer(msgSender, amount1);
