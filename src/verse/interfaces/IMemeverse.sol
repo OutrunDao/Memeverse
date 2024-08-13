@@ -6,7 +6,6 @@ pragma solidity ^0.8.24;
  */
 interface IMemeverse {
     struct LaunchPool {
-        address owner;                  // LaunchPool owner
         address token;                  // Token address
         address liquidProof;            // Liquidity proof token address
         string name;                    // Token name

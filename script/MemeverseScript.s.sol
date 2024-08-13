@@ -19,6 +19,8 @@ contract MemeverseScript is BaseScript {
         address orUSDStakeManager = vm.envAddress("ORUSD_STAKE_MANAGER");
         
         Memeverse memeverse = new Memeverse(
+            "Memeverse",
+            "MVS",
             owner,
             gasManager,
             orETH,

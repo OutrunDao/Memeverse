@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 import "./interfaces/IMemeverse.sol";
 import "./interfaces/IReserveFundManager.sol";
@@ -23,7 +24,7 @@ import "../token/MemeLiquidProof.sol";
 /**
  * @title Trapping into the memeverse
  */
-contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIncrementId {
+contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initializable, AutoIncrementId {
     using SafeTransferLib for IERC20;
 
     address public constant USDB = 0x4200000000000000000000000000000000000022;
@@ -58,6 +59,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
     mapping(bytes32 beacon => uint256) private _tempFundPool;
 
     constructor(
+        string memory _name,
+        string memory _symbol,
         address _owner,
         address _gasManager,
         address _orETH,
@@ -68,7 +71,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         address _orUSDStakeManager,
         address _outrunAMMFactory,
         address _outrunAMMRouter
-    ) Ownable(_owner) GasManagerable(_gasManager) {
+    ) ERC721(_name, _symbol) Ownable(_owner) GasManagerable(_gasManager) {
         orETH = _orETH;
         osETH = _osETH;
         orUSD = _orUSD;
@@ -292,7 +295,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
     function claimTransactionFees(uint256 poolId) external override {
         address msgSender = msg.sender;
         LaunchPool storage pool = _launchPools[poolId];
-        require(msgSender == pool.owner && block.timestamp > pool.endTime, "Permission denied");
+        require(msgSender == ownerOf(poolId) && block.timestamp > pool.endTime, "Permission denied");
 
         address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
         address pairAddress = OutrunAMMLibrary.pairFor(outrunAMMFactory, pool.token, lpBaseToken);
@@ -306,8 +309,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
 
     /**
      * @dev register memeverse
-     * @param name - Name of token
-     * @param symbol - Symbol of token
+     * @param _name - Name of token
+     * @param _symbol - Symbol of token
      * @param durationDays - Duration days of launchpool
      * @param maxDeposit - Max fee per deposit
      * @param lockupDays - LockupDay of liquidity
@@ -316,8 +319,8 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
      * @param ethOrUsdb - Type of deposited funds
      */
     function registerMemeverse(
-        string calldata name,
-        string calldata symbol,
+        string calldata _name,
+        string calldata _symbol,
         string calldata description,
         uint128 maxDeposit,
         uint128 durationDays,
@@ -331,30 +334,29 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
         require(durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
         require(lockupDays >= minLockupDays && lockupDays <= maxLockupDays, "Invalid lockup days");
         require(fundBasedAmount >= minfundBasedAmount && fundBasedAmount <= maxfundBasedAmount, "Invalid fundBasedAmount");
-        require(bytes(name).length < 32 && bytes(symbol).length < 32 && bytes(description).length < 257, "String too long");
+        require(bytes(_name).length < 32 && bytes(_symbol).length < 32 && bytes(description).length < 257, "String too long");
 
         // Duplicate symbols are not allowed during the liquidity lock period
-        require(!_symbolMap[symbol], "Symbol duplication");
-        _symbolMap[symbol] = true;
+        require(!_symbolMap[_symbol], "Symbol duplication");
+        _symbolMap[_symbol] = true;
 
         uint256 endTime = block.timestamp + durationDays * DAY;
 
         // Deploy token
         address msgSender = msg.sender;
-        address token = address(new Meme(name, symbol, 18, maxSupply, address(this), reserveFundManager, msgSender));
+        address token = address(new Meme(_name, _symbol, 18, maxSupply, address(this), reserveFundManager, msgSender));
         address liquidProof = address(new MemeLiquidProof(
-            string(abi.encodePacked(name, " Liquid")),
-            string(abi.encodePacked(symbol, " LIQUID")),
+            string(abi.encodePacked(_name, " Liquid")),
+            string(abi.encodePacked(_symbol, " LIQUID")),
             18,
             address(this),
             msgSender
         ));
         LaunchPool memory pool = LaunchPool(
-            msgSender, 
             token, 
             liquidProof, 
-            name, 
-            symbol, 
+            _name, 
+            _symbol, 
             description, 
             0, 
             uint128(endTime),
@@ -364,6 +366,7 @@ contract Memeverse is IMemeverse, Ownable, GasManagerable, Initializable, AutoIn
             ethOrUsdb
         );
         poolId = nextId();
+        _safeMint(msgSender, poolId);
         _launchPools[poolId] = pool;
 
         emit RegisterMemeverse(poolId, msgSender, token);
