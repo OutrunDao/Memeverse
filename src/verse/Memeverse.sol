@@ -6,13 +6,10 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 import "./interfaces/IMemeverse.sol";
 import "./interfaces/IReserveFundManager.sol";
-import "../blast/GasManagerable.sol";
-import "../common/IORETH.sol";
-import "../common/IORUSD.sol";
-import "../common/IOutrunAMMPair.sol";
-import "../common/IOutrunAMMRouter.sol";
-import "../common/IORETHStakeManager.sol";
-import "../common/IORUSDStakeManager.sol";
+import "../external/IERC20.sol";
+import "../external/IOutrunAMMPair.sol";
+import "../external/IOutrunAMMRouter.sol";
+import "../external/INativeYieldTokenStakeManager.sol";
 import "../utils/FixedPoint128.sol";
 import "../utils/Initializable.sol";
 import "../utils/SafeTransferLib.sol";
@@ -24,28 +21,20 @@ import "../token/MemeLiquidProof.sol";
 /**
  * @title Trapping into the memeverse
  */
-contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initializable, AutoIncrementId {
+contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIncrementId {
     using SafeTransferLib for IERC20;
 
-    address public constant USDB = 0x4200000000000000000000000000000000000022;
     uint256 public constant DAY = 24 * 3600;
     uint256 public constant RATIO = 10000;
-    address public immutable orETH;
-    address public immutable osETH;
-    address public immutable orUSD;
-    address public immutable osUSD;
-    address public immutable orETHStakeManager;
-    address public immutable orUSDStakeManager;
-    address public immutable outrunAMMRouter;
-    address public immutable outrunAMMFactory;
+    address public immutable OUTRUN_AMM_ROUTER;
+    address public immutable OUTRUN_AMM_FACTORY;
     
+    address public revenuePool;
     address public reserveFundManager;
     uint256 public genesisFee;
     uint256 public reserveFundRatio;
     uint256 public permanentLockRatio;
     uint256 public maxEarlyUnlockRatio;
-    uint256 public minEthFund;
-    uint256 public minUsdbFund;
     uint128 public minDurationDays;
     uint128 public maxDurationDays;
     uint128 public minLockupDays;
@@ -53,54 +42,29 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
     uint128 public minfundBasedAmount;
     uint128 public maxfundBasedAmount;
 
-    mapping(uint256 poolId => LaunchPool) private _launchPools;
     mapping(string symbol => bool) private _symbolMap;
-    mapping(uint256 poolId => uint256) private _tempFunds;
-    mapping(bytes32 beacon => uint256) private _tempFundPool;
+    mapping(uint256 poolId => LaunchPool) private _launchPools;
+    mapping(uint256 typeId => FundType fundType) private _fundTypes;
 
     constructor(
         string memory _name,
         string memory _symbol,
         address _owner,
-        address _gasManager,
-        address _orETH,
-        address _osETH,
-        address _orUSD,
-        address _osUSD,
-        address _orETHStakeManager,
-        address _orUSDStakeManager,
+        address _revenuePool,
         address _outrunAMMFactory,
         address _outrunAMMRouter
-    ) ERC721(_name, _symbol) Ownable(_owner) GasManagerable(_gasManager) {
-        orETH = _orETH;
-        osETH = _osETH;
-        orUSD = _orUSD;
-        osUSD = _osUSD;
-        orETHStakeManager = _orETHStakeManager;
-        orUSDStakeManager = _orUSDStakeManager;
-        outrunAMMFactory = _outrunAMMFactory;
-        outrunAMMRouter = _outrunAMMRouter;
-
-        IERC20(orETH).approve(_orETHStakeManager, type(uint256).max);
-        IERC20(osETH).approve(_outrunAMMRouter, type(uint256).max);
-        IERC20(orUSD).approve(_orUSDStakeManager, type(uint256).max);
-        IERC20(osUSD).approve(_outrunAMMRouter, type(uint256).max);
+    ) ERC721(_name, _symbol) Ownable(_owner) {
+        revenuePool = _revenuePool;
+        OUTRUN_AMM_ROUTER = _outrunAMMRouter;
+        OUTRUN_AMM_FACTORY = _outrunAMMFactory;
     }
 
     function launchPools(uint256 poolId) external view override returns (LaunchPool memory) {
         return _launchPools[poolId];
     }
 
-    function tempFunds(uint256 poolId) external view override returns (uint256) {
-        return _tempFunds[poolId];
-    }
-
-    function tempFundPool(uint256 poolId, address account) external view override returns (uint256) {
-        return _tempFundPool[getBeacon(poolId, account)];
-    }
-
-    function getBeacon(uint256 poolId, address account) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(poolId, account));
+    function fundTypes(uint256 typeId) external view override returns (FundType memory) {
+        return _fundTypes[typeId];
     }
 
     function initialize(
@@ -109,8 +73,6 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
         uint256 _reserveFundRatio,
         uint256 _permanentLockRatio,
         uint256 _maxEarlyUnlockRatio,
-        uint256 _minEthFund,
-        uint256 _minUsdbFund,
         uint128 _minDurationDays,
         uint128 _maxDurationDays,
         uint128 _minLockupDays,
@@ -123,125 +85,75 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
         reserveFundRatio = _reserveFundRatio;
         permanentLockRatio = _permanentLockRatio;
         maxEarlyUnlockRatio = _maxEarlyUnlockRatio;
-        minEthFund = _minEthFund;
-        minUsdbFund = _minUsdbFund;
         minDurationDays = _minDurationDays;
         maxDurationDays = _maxDurationDays;
         minLockupDays = _minLockupDays;
         maxLockupDays = _maxLockupDays;
         minfundBasedAmount = _minfundBasedAmount;
         maxfundBasedAmount = _maxfundBasedAmount;
-
-        IERC20(osETH).approve(_reserveFundManager, type(uint256).max);
-        IERC20(osUSD).approve(_reserveFundManager, type(uint256).max);
     }
 
     /**
-     * @dev Deposit temporary fund
+     * @dev Deposit native yield token to mint token
      * @param poolId - LaunchPool id
-     * @param usdbValue - USDB value to deposit
+     * @param amountInNativeYieldToken - Amount of native yield token
+     * @notice Approve fund token first
      */
-    function depositToTempFundPool(uint256 poolId, uint256 usdbValue) external payable override {
+    function deposit(uint256 poolId, uint256 amountInNativeYieldToken) external override {
         address msgSender = msg.sender;
-        require(msgSender == tx.origin, "Only EOA account");
 
         LaunchPool storage pool = _launchPools[poolId];
-        uint128 endTime = pool.endTime;
-        uint128 maxDeposit = pool.maxDeposit;
+        uint256 endTime = pool.endTime;
         uint256 currentTime = block.timestamp;
         require(currentTime < endTime, "Invalid time");
 
-        uint256 value;
-        if (pool.ethOrUsdb) {
-            value = usdbValue;
-            require(value <= maxDeposit, "USDB value exceeds max deposit");
-            IERC20(USDB).safeTransferFrom(msgSender, address(this), value);
-        } else {
-            value = msg.value;
-            require(value <= maxDeposit, "ETH value exceeds max deposit");
-        }
-        
-        unchecked {
-            _tempFunds[poolId] += value;
-            _tempFundPool[getBeacon(poolId, msgSender)] += value;
-        }
-    }
-
-    /**
-     * @dev Claim token or refund after endTime
-     * @param poolId - LaunchPool id
-     */
-    function claimTokenOrFund(uint256 poolId) external override {
-        address msgSender = msg.sender;
-        LaunchPool storage pool = _launchPools[poolId];
-        bytes32 beacon = getBeacon(poolId, msgSender);
-        uint256 fund = _tempFundPool[beacon];
-        require(fund > 0, "No fund");
-
-        _tempFunds[poolId] -= fund;
-        _tempFundPool[beacon] = 0;
-
-        uint256 lockupDays = pool.lockupDays;
-        uint256 currentTime = block.timestamp;
-        bool ethOrUsdb = pool.ethOrUsdb;
-
-        if (currentTime >= pool.endTime && pool.totalFund >= (ethOrUsdb ? minUsdbFund : minEthFund)) {
-            if (ethOrUsdb) {
-                IERC20(USDB).safeTransfer(msgSender, fund);
-            } else {
-                SafeTransferLib.safeTransferETH(payable(msgSender), fund);
-            }
-            return;
-        }
-
-        address token = pool.token;
-        uint256 fundBasedAmount = pool.fundBasedAmount;
-        uint256 amountInOS;
-        uint256 reserveFundAmount;
+        uint256 fundTypeId = pool.fundTypeId;
+        FundType storage fundType = _fundTypes[fundTypeId];
+        require(amountInNativeYieldToken >= fundType.minFundDeposit, "Insufficient fund deposited");
+        address fundToken = fundType.fundToken;
+        IERC20(fundToken).safeTransferFrom(msgSender, address(this), amountInNativeYieldToken);
 
         // Stake
-        if (ethOrUsdb) {
-            IORUSD(orUSD).deposit(fund);
-            (amountInOS,) = IORUSDStakeManager(orUSDStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
-        } else {
-            IORETH(orETH).deposit{value: fund}();
-            (amountInOS,) = IORETHStakeManager(orETHStakeManager).stake(fund, lockupDays, msgSender, address(this), msgSender);
-        }
-        
+        (uint256 amountInPT,) = INativeYieldTokenStakeManager(fundType.outStakeManager).stake(amountInNativeYieldToken, pool.lockupDays, msgSender, address(this), msgSender);
+
         // Deposit to reserveFund
-        reserveFundAmount = amountInOS * reserveFundRatio / RATIO;
+        uint256 reserveFundAmount = amountInPT * reserveFundRatio / RATIO;
+        uint256 fundBasedAmount = pool.fundBasedAmount;
         uint256 basePriceX128 = (RATIO - reserveFundRatio) * FixedPoint128.Q128 / RATIO / fundBasedAmount / 2;
-        IReserveFundManager(reserveFundManager).deposit(token, reserveFundAmount, basePriceX128, ethOrUsdb);
-        amountInOS -= reserveFundAmount;
+        IERC20(fundToken).approve(reserveFundManager, reserveFundAmount);
+        address token = pool.token;
+        IReserveFundManager(reserveFundManager).deposit(token, reserveFundAmount, basePriceX128, fundToken);
+        amountInPT -= reserveFundAmount;
 
         // Mint token
-        uint256 baseAmount = amountInOS * fundBasedAmount;
+        uint256 baseAmount = amountInPT * fundBasedAmount;
         uint256 deployAmount = baseAmount << 2;
         IMeme(token).mint(msgSender, baseAmount);
         IMeme(token).mint(address(this), deployAmount);
-        
+
         // Deploy liquidity
-        IERC20(token).approve(outrunAMMRouter, deployAmount);
-        (,, uint256 liquidity) = IOutrunAMMRouter(outrunAMMRouter).addLiquidity(
-            ethOrUsdb ? osUSD : osETH,
+        IERC20(token).approve(OUTRUN_AMM_ROUTER, deployAmount);
+        IERC20(fundToken).approve(OUTRUN_AMM_ROUTER, amountInPT);
+        (,, uint256 liquidity) = IOutrunAMMRouter(OUTRUN_AMM_ROUTER).addLiquidity(
+            fundToken,
             token,
-            amountInOS,
+            amountInPT,
             deployAmount,
-            amountInOS,
+            amountInPT,
             deployAmount,
             address(this),
             block.timestamp + 600
         );
 
         // Mint liquidity proof token
-        uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
+        uint256 proofAmount = liquidity * (RATIO - permanentLockRatio) / RATIO; // TODO: Check this
         IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
 
         unchecked {
-            pool.totalFund += fund;
+            pool.totalFund += amountInPT;
         }
 
-        emit ClaimToken(poolId, msgSender, fund, baseAmount, deployAmount, proofAmount);
+        emit Deposit(poolId, msgSender, amountInPT, baseAmount, deployAmount, proofAmount);
     }
 
     /**
@@ -250,12 +162,11 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
      */
     function enablePoolTokenTransfer(uint256 poolId) external override {
         LaunchPool storage pool = _launchPools[poolId];
-        require(pool.totalFund >= (pool.ethOrUsdb ? minUsdbFund : minEthFund), "Insufficient staked fund");
-
+        FundType storage fundType = _fundTypes[pool.fundTypeId];
+        require(pool.totalFund >= fundType.minTotalFund, "Insufficient staked fund");
+        require(block.timestamp >= pool.endTime, "Pool not closed");
         address token = pool.token;
         require(!IMeme(token).isTransferable(), "Already enable transfer");
-        require(block.timestamp >= pool.endTime, "Pool not closed");
-
         IMeme(token).enableTransfer();
     }
 
@@ -281,8 +192,8 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
             claimedLiquidity = burnedLiquidity;
         }
         
-        address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
-        address pairAddress = OutrunAMMLibrary.pairFor(outrunAMMFactory, pool.token, lpBaseToken);
+        FundType storage fundType = _fundTypes[pool.fundTypeId];
+        address pairAddress = OutrunAMMLibrary.pairFor(OUTRUN_AMM_FACTORY, fundType.fundToken, pool.token);
         IERC20(pairAddress).safeTransfer(msgSender, claimedLiquidity);
 
         emit ClaimPoolLiquidity(poolId, msgSender, claimedLiquidity);
@@ -297,60 +208,61 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
         LaunchPool storage pool = _launchPools[poolId];
         require(msgSender == ownerOf(poolId) && block.timestamp > pool.endTime, "Permission denied");
 
-        address lpBaseToken = pool.ethOrUsdb ? osUSD : osETH;
-        address pairAddress = OutrunAMMLibrary.pairFor(outrunAMMFactory, pool.token, lpBaseToken);
+        FundType storage fundType = _fundTypes[pool.fundTypeId];
+        address pairAddress = OutrunAMMLibrary.pairFor(OUTRUN_AMM_FACTORY, fundType.fundToken, pool.token);
         IOutrunAMMPair pair = IOutrunAMMPair(pairAddress);
         (uint256 amount0, uint256 amount1) = pair.claimMakerFee();
-        IERC20(pair.token0()).safeTransfer(msgSender, amount0);
-        IERC20(pair.token1()).safeTransfer(msgSender, amount1);
+        address token0 = pair.token0();
+        address token1 = pair.token1();
+        IERC20(token0).safeTransfer(msgSender, amount0);
+        IERC20(token1).safeTransfer(msgSender, amount1);
 
-        emit ClaimTransactionFees(poolId, msgSender, pool.token, amount0, amount1);
+        emit ClaimTransactionFees(poolId, msgSender, pool.token, token0, amount0, token1, amount1);
     }
 
     /**
      * @dev register memeverse
      * @param _name - Name of token
      * @param _symbol - Symbol of token
+     * @param description - Description of token
      * @param durationDays - Duration days of launchpool
-     * @param maxDeposit - Max fee per deposit
      * @param lockupDays - LockupDay of liquidity
      * @param fundBasedAmount - Token amount based fund
-     * @param maxSupply - Maximum token supply, if 0 => unlimited
-     * @param ethOrUsdb - Type of deposited funds
+     * @param mintLimit - Maximum mint limit, if 0 => unlimited
+     * @param fundTypeId - Fund type id
      */
     function registerMemeverse(
         string calldata _name,
         string calldata _symbol,
         string calldata description,
-        uint128 maxDeposit,
-        uint128 durationDays,
-        uint128 lockupDays,
-        uint128 fundBasedAmount,
-        uint256 maxSupply,
-        bool ethOrUsdb
+        uint256 durationDays,
+        uint256 lockupDays,
+        uint256 fundBasedAmount,
+        uint256 mintLimit,
+        uint256 fundTypeId
     ) external payable override returns (uint256 poolId) {
         require(msg.value >= genesisFee, "Insufficient genesis fee");
-        require(maxDeposit > 0, "MaxDeposit zero input");
-        require(durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
         require(lockupDays >= minLockupDays && lockupDays <= maxLockupDays, "Invalid lockup days");
+        require(durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
         require(fundBasedAmount >= minfundBasedAmount && fundBasedAmount <= maxfundBasedAmount, "Invalid fundBasedAmount");
         require(bytes(_name).length < 32 && bytes(_symbol).length < 32 && bytes(description).length < 257, "String too long");
 
-        // Duplicate symbols are not allowed during the liquidity lock period
+        FundType storage fundType = _fundTypes[fundTypeId];
+        require(fundType.fundToken != address(0), "Invalid fund type");
+        require(mintLimit == 0 || mintLimit >= fundBasedAmount * fundType.minTotalFund * 3, "Invalid mint limit");
+        
+        // Duplicate symbols are not allowed
         require(!_symbolMap[_symbol], "Symbol duplication");
         _symbolMap[_symbol] = true;
 
-        uint256 endTime = block.timestamp + durationDays * DAY;
-
         // Deploy token
         address msgSender = msg.sender;
-        address token = address(new Meme(_name, _symbol, 18, maxSupply, address(this), reserveFundManager, msgSender));
+        address token = address(new Meme(_name, _symbol, 18, mintLimit, address(this), reserveFundManager, msgSender));
         address liquidProof = address(new MemeLiquidProof(
             string(abi.encodePacked(_name, " Liquid")),
             string(abi.encodePacked(_symbol, " LIQUID")),
             18,
-            address(this),
-            msgSender
+            address(this)
         ));
         LaunchPool memory pool = LaunchPool(
             token, 
@@ -359,17 +271,24 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
             _symbol, 
             description, 
             0, 
-            uint128(endTime),
-            maxDeposit,
+            uint128(block.timestamp + durationDays * DAY),
             lockupDays, 
             fundBasedAmount,
-            ethOrUsdb
+            fundTypeId
         );
         poolId = nextId();
         _safeMint(msgSender, poolId);
         _launchPools[poolId] = pool;
 
         emit RegisterMemeverse(poolId, msgSender, token);
+    }
+
+    /**
+     * @dev Set revenuePool
+     * @param _revenuePool - Revenue pool address
+     */
+    function setRevenuePool(address _revenuePool) external override onlyOwner {
+        revenuePool = _revenuePool;
     }
 
     /**
@@ -408,22 +327,6 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
     }
 
     /**
-     * @dev Set min eth fund staked amount to enable transfer token
-     * @param _minEthFund - Min eth fund staked amount
-     */
-    function setMinEthFund(uint256 _minEthFund) external override onlyOwner {
-        minEthFund = _minEthFund;
-    }
-
-    /**
-     * @dev Set min usdb fund staked amount to enable transfer token
-     * @param _minUsdbFund - Min usdb fund staked amount
-     */
-    function setMinUsdbFund(uint256 _minUsdbFund) external override onlyOwner {
-        minUsdbFund = _minUsdbFund;
-    }
-
-    /**
      * @dev Set launch pool duration days range
      * @param _minDurationDays - Min launch pool duration days
      * @param _maxDurationDays - Max launch pool duration days
@@ -451,5 +354,23 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
     function setFundBasedAmountRange(uint128 _minfundBasedAmount, uint128 _maxfundBasedAmount) external override onlyOwner {
         minfundBasedAmount = _minfundBasedAmount;
         maxfundBasedAmount = _maxfundBasedAmount;
+    }
+
+    /**
+     * @dev Set fund type
+     * @param typeId - Type id
+     * @param minTotalFund - Min total fund
+     * @param minFundDeposit - Min fund deposit
+     * @param fundToken - Fund token address
+     * @param outStakeManager - Out stake manager address
+     */
+    function setFundType(
+        uint256 typeId, 
+        uint256 minTotalFund, 
+        uint256 minFundDeposit, 
+        address fundToken, 
+        address outStakeManager
+    ) external override onlyOwner {
+        _fundTypes[typeId] = FundType(minTotalFund, minFundDeposit, fundToken, outStakeManager);
     }
 }

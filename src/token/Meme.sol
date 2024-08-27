@@ -4,19 +4,18 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IMeme.sol";
-import "../blast/GasManagerable.sol";
 
 /**
  * @title Meme token
  */
-contract Meme is IMeme, Ownable, GasManagerable {
+contract Meme is IMeme, Ownable {
     uint256 internal constant DAY = 24 * 3600;
 
     string public name;
     string public symbol;
     uint8 public immutable decimals;
     uint256 public totalSupply;
-    uint256 public maxSupply; // if 0, unlimit
+    uint256 public mintLimit; // if 0, unlimit
     address public memeverse;
     address public reserveFundManager;
     bool public isTransferable;
@@ -25,8 +24,8 @@ contract Meme is IMeme, Ownable, GasManagerable {
     mapping(address => mapping(address => uint256)) public allowance;
     mapping(address => uint256) public nonces;
 
-    error MemeTokenExceedsMaxSupply();
-    error TransferNotStart();
+    error MemeTokenExceedsMintLimit();
+    error TransferNotEnable();
 
     modifier onlyMemeverse() {
         require(msg.sender == memeverse, "Only memeverse");
@@ -37,15 +36,15 @@ contract Meme is IMeme, Ownable, GasManagerable {
         string memory _name, 
         string memory _symbol,
         uint8 _decimals, 
-        uint256 _maxSupply,
+        uint256 _mintLimit,
         address _memeverse,
         address _reserveFundManager,
         address _owner
-    ) Ownable(_owner) GasManagerable(_owner) {
+    ) Ownable(_owner) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        maxSupply = _maxSupply;
+        mintLimit = _mintLimit;
         memeverse = _memeverse;
         reserveFundManager = _reserveFundManager;
     }
@@ -78,7 +77,7 @@ contract Meme is IMeme, Ownable, GasManagerable {
 
             emit Transfer(msg.sender, to, amount);
         } else {
-            revert TransferNotStart();
+            revert TransferNotEnable();
         }
 
         return true;
@@ -108,7 +107,7 @@ contract Meme is IMeme, Ownable, GasManagerable {
 
             emit Transfer(from, to, amount);
         } else {
-            revert TransferNotStart();
+            revert TransferNotEnable();
         }
 
         return true;
@@ -117,9 +116,9 @@ contract Meme is IMeme, Ownable, GasManagerable {
     function mint(address account, uint256 amount) external override onlyMemeverse {
         _mint(account, amount);
 
-        uint256 _maxSupply = maxSupply;
-        if (_maxSupply != 0 && totalSupply > _maxSupply) {
-            revert MemeTokenExceedsMaxSupply();
+        uint256 _mintLimit = mintLimit;
+        if (_mintLimit != 0 && totalSupply > _mintLimit) {
+            revert MemeTokenExceedsMintLimit();
         }
     }
 

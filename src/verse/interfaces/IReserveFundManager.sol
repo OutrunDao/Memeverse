@@ -9,12 +9,12 @@ interface IReserveFundManager {
         uint256 fundAmount;
         uint256 tokenAmount;
         uint256 basePriceX128;
-        bool ethOrUsdb;
+        address fundToken;
     }
 
     function reserveFunds(address token) external view returns (ReserveFund memory);
 
-    function deposit(address token, uint256 fundAmount, uint256 basePriceX128, bool ethOrUsdb) external;
+    function deposit(address token, uint256 fundAmount, uint256 basePriceX128, address fundToken) external;
 
     function purchase(address token, uint256 fundAmount) external returns (uint256 tokenAmount);
 
@@ -22,7 +22,7 @@ interface IReserveFundManager {
 
     function setPurchaseFeeRatio(uint256 _purchaseFeeRatio) external;
 
-    event Purchase(address indexed token, uint256 outputToken, bool indexed ethOrUsdb, uint256 purchaseFee);
+    event Purchase(address indexed token, address fundToken, uint256 inputFundAmount, uint256 outputTokenAmount, uint256 purchaseFee);
 
-    event Repurchase(address indexed token, uint256 outputFund, bool indexed ethOrUsdb, uint256 burnedToken);
+    event Repurchase(address indexed token, address fundToken, uint256 inputTokenAmount, uint256 outputFundAmount, uint256 burnedTokenAmount);
 }

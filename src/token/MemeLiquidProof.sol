@@ -2,12 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "./interfaces/IMemeLiquidProof.sol";
-import "../blast/GasManagerable.sol";
 
 /**
  * @title Memeverse Liquidity proof Token Standard
  */
-contract MemeLiquidProof is IMemeLiquidProof, GasManagerable {
+contract MemeLiquidProof is IMemeLiquidProof {
     string public name;
     string public symbol;
     uint8 public immutable decimals;
@@ -23,13 +22,7 @@ contract MemeLiquidProof is IMemeLiquidProof, GasManagerable {
         _;
     }
 
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        address _memeverse, 
-        address _gasManager
-    ) GasManagerable(_gasManager) {
+    constructor(string memory _name, string memory _symbol, uint8 _decimals, address _memeverse) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;

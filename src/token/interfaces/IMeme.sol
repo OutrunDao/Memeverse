@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import "../../common/IERC20.sol";
+import "../../external/IERC20.sol";
 
 /**
  * @title Meme token interface
  */
 interface IMeme is IERC20 {
-    function maxSupply() external view returns (uint256);
+    function mintLimit() external view returns (uint256);
 
     function memeverse() external view returns (address);
 

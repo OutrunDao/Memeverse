@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.24;
 
-import {IERC20} from "../common/IERC20.sol";
+import {IERC20} from "../external/IERC20.sol";
 
 /// @notice Safe ETH and ERC20 transfer library that gracefully handles missing return values.
 /// @dev Use with caution! Some functions in this library knowingly create dirty bits at the destination of the free memory pointer.
