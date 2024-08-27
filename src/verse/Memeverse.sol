@@ -234,7 +234,7 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, GasManagerable, Initi
         );
 
         // Mint liquidity proof token
-        uint256 proofAmount = liquidity * permanentLockRatio / RATIO;
+        uint256 proofAmount = liquidity * (RATIO - permanentLockRatio) / RATIO;
         IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
 
         unchecked {
