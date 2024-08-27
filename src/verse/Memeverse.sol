@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 import "./interfaces/IMemeverse.sol";
@@ -146,7 +147,7 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
         );
 
         // Mint liquidity proof token
-        uint256 proofAmount = liquidity * (RATIO - permanentLockRatio) / RATIO; // TODO: Check this
+        uint256 proofAmount = liquidity * (RATIO - permanentLockRatio) / RATIO;
         IMemeLiquidProof(pool.liquidProof).mint(msgSender, proofAmount);
 
         unchecked {
@@ -241,7 +242,9 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
         uint256 mintLimit,
         uint256 fundTypeId
     ) external payable override returns (uint256 poolId) {
-        require(msg.value >= genesisFee, "Insufficient genesis fee");
+        uint256 msgValue = msg.value;
+        require(msgValue >= genesisFee, "Insufficient genesis fee");
+        Address.sendValue(payable(revenuePool), msgValue);
         require(lockupDays >= minLockupDays && lockupDays <= maxLockupDays, "Invalid lockup days");
         require(durationDays >= minDurationDays && durationDays <= maxDurationDays, "Invalid duration days");
         require(fundBasedAmount >= minfundBasedAmount && fundBasedAmount <= maxfundBasedAmount, "Invalid fundBasedAmount");
