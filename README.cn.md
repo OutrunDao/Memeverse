@@ -1,4 +1,4 @@
-**Read this in English: [English](README.cn.md)**  
+**Read this in English: [English](README.md)**  
 
 # 🤩 Memeverse
 
