@@ -18,4 +18,10 @@ interface IMeme is IERC20 {
     function mint(address account, uint256 amount) external;
 
     function burn(address account, uint256 amount) external returns (bool);
+
+    error PermissionDenied();
+
+    error InsufficientBalance();
+
+    error AlreadyEnableTransfer();
 }

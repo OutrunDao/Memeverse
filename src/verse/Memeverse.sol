@@ -194,7 +194,7 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
     function claimTradeFees(uint256 poolId) external override {
         address msgSender = msg.sender;
         LaunchPool storage pool = launchPools[poolId];
-        require(msgSender == ownerOf(poolId) && block.timestamp > pool.endTime, "Permission denied");
+        require(msgSender == ownerOf(poolId) && block.timestamp > pool.endTime, PermissionDenied());
 
         address pairAddress = OutrunAMMLibrary.pairFor(OUTRUN_AMM_FACTORY, UPT, pool.token);
         IOutrunAMMPair pair = IOutrunAMMPair(pairAddress);
@@ -243,7 +243,7 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
         );
         
         // Duplicate symbols are not allowed
-        require(!symbolMap[_symbol], "Symbol duplication");
+        require(!symbolMap[_symbol], SymbolDuplication());
         symbolMap[_symbol] = true;
 
         // Deploy token
@@ -294,7 +294,7 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
      * @param _reserveFundRatio - Reserve fund ratio
      */
     function setReserveFundRatio(uint256 _reserveFundRatio) external override onlyOwner {
-        require(_reserveFundRatio <= RATIO, "Ratio too high");
+        require(_reserveFundRatio <= RATIO, RatioOverflow());
         reserveFundRatio = _reserveFundRatio;
     }
 
@@ -303,8 +303,17 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
      * @param _permanentLockRatio - Permanent lock ratio
      */
     function setPermanentLockRatio(uint256 _permanentLockRatio) external override onlyOwner {
-        require(_permanentLockRatio <= RATIO, "Ratio too high");
+        require(_permanentLockRatio <= RATIO, RatioOverflow());
         permanentLockRatio = _permanentLockRatio;
+    }
+
+    /**
+     * @dev Set max early unlock ratio
+     * @param _maxEarlyUnlockRatio - Max early unlock ratio
+     */
+    function setMaxEarlyUnlockRatio(uint256 _maxEarlyUnlockRatio) external override onlyOwner {
+        require(_maxEarlyUnlockRatio <= RATIO, RatioOverflow());
+        maxEarlyUnlockRatio = _maxEarlyUnlockRatio;
     }
 
     /**
@@ -313,15 +322,6 @@ contract Memeverse is IMemeverse, ERC721Burnable, Ownable, Initializable, AutoIn
      */
     function setMinTotalFund(uint256 _minTotalFund) external override onlyOwner {
         minTotalFund = _minTotalFund;
-    }
-
-    /**
-     * @dev Set max early unlock ratio
-     * @param _maxEarlyUnlockRatio - Max early unlock ratio
-     */
-    function setMaxEarlyUnlockRatio(uint256 _maxEarlyUnlockRatio) external override onlyOwner {
-        require(_maxEarlyUnlockRatio <= RATIO, "Ratio too high");
-        maxEarlyUnlockRatio = _maxEarlyUnlockRatio;
     }
 
     /**

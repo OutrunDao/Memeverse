@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "./interfaces/IMemeLiquidProof.sol";
 
@@ -18,7 +18,7 @@ contract MemeLiquidProof is IMemeLiquidProof {
     mapping(address => uint256) public nonces;
 
     modifier onlyMemeverse() {
-        require(msg.sender == memeverse, "Only memeverse");
+        require(msg.sender == memeverse, PermissionDenied());
         _;
     }
 
@@ -83,7 +83,7 @@ contract MemeLiquidProof is IMemeLiquidProof {
     }
 
     function burn(address account, uint256 amount) external onlyMemeverse returns (bool) {
-        require(balanceOf[account] >= amount, "Insufficient balance");
+        require(balanceOf[account] >= amount, InsufficientBalance());
         _burn(account, amount);
         return true;
     }

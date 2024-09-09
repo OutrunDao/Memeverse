@@ -1,5 +1,5 @@
-//SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.26;
 
 interface IOutrunAMMPair {
     function token0() external view returns (address);

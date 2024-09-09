@@ -67,6 +67,11 @@ interface IMemeverse {
 
     function setFundBasedAmountRange(uint128 minfundBasedAmount, uint128 maxfundBasedAmount) external;
 
+    error RatioOverflow();
+
+    error PermissionDenied();
+
+    error SymbolDuplication();
 
     error InvalidRegisterInfo();
 

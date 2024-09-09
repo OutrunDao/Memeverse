@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
-import {IERC20} from "../external/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @notice Safe ETH and ERC20 transfer library that gracefully handles missing return values.
 /// @dev Use with caution! Some functions in this library knowingly create dirty bits at the destination of the free memory pointer.
 /// @dev Note that none of the functions in this library check that a token has code at all! That responsibility is delegated to the caller.
 library SafeTransferLib {
+    error TransferFailed();
+
+    error ETHTransferFailed();
+
+    error TransferFromFailed();
+
     /** ETH OPERATIONS **/
     function safeTransferETH(address to, uint256 amount) internal {
         bool success;
@@ -17,7 +23,7 @@ library SafeTransferLib {
             success := call(gas(), to, amount, 0, 0, 0, 0)
         }
 
-        require(success, "ETH_TRANSFER_FAILED");
+        require(success, ETHTransferFailed());
     }
 
     /** ERC20 OPERATIONS **/
@@ -53,7 +59,7 @@ library SafeTransferLib {
             )
         }
 
-        require(success, "TRANSFER_FROM_FAILED");
+        require(success, TransferFromFailed());
     }
 
     function safeTransfer(
@@ -85,6 +91,6 @@ library SafeTransferLib {
             )
         }
 
-        require(success, "TRANSFER_FAILED");
+        require(success, TransferFailed());
     }
 }

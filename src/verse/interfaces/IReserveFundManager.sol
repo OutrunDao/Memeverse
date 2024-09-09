@@ -19,6 +19,14 @@ interface IReserveFundManager {
 
     function setPurchaseFeeRatio(uint256 purchaseFeeRatio) external;
 
+    error RatioOverflow();
+
+    error PermissionDenied();
+
+    error InsufficientReserveToken();
+
+    error InsufficientReserveFund();
+
     event Purchase(address indexed token, uint256 inputFundAmount, uint256 outputTokenAmount, uint256 purchaseFee);
 
     event Repurchase(address indexed token, uint256 inputTokenAmount, uint256 outputFundAmount, uint256 burnedTokenAmount);

@@ -26,7 +26,7 @@ contract Meme is IMeme, Ownable {
     error TransferNotEnable();
 
     modifier onlyMemeverse() {
-        require(msg.sender == memeverse, "Only memeverse");
+        require(msg.sender == memeverse, PermissionDenied());
         _;
     }
 
@@ -46,7 +46,7 @@ contract Meme is IMeme, Ownable {
     }
 
     function enableTransfer() external override onlyMemeverse {
-        require(!isTransferable, "Already enable transfer");
+        require(!isTransferable, AlreadyEnableTransfer());
         isTransferable = true;
     }
 
@@ -114,8 +114,8 @@ contract Meme is IMeme, Ownable {
     }
 
     function burn(address account, uint256 amount) external override returns (bool) {
-        require(msg.sender == reserveFundManager, "Only reserveFundManager");
-        require(balanceOf[account] >= amount, "Insufficient balance");
+        require(msg.sender == reserveFundManager, PermissionDenied());
+        require(balanceOf[account] >= amount, InsufficientBalance());
         _burn(account, amount);
         return true;
     }

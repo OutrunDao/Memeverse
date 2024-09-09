@@ -33,7 +33,7 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
      * @param basePriceX128 - Token base priceX128(mul 2**128)
      */
     function deposit(address token, uint256 fundAmount, uint256 basePriceX128) external override {
-        require(msg.sender == MEMEVERSE, "Only memeverse");
+        require(msg.sender == MEMEVERSE, PermissionDenied());
         IERC20(UPT).safeTransferFrom(msg.sender, address(this), fundAmount);
 
         ReserveFund storage reserveFund = _reserveFunds[token];
@@ -59,7 +59,7 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
 
         outputTokenAmount = inputFundAmount * FixedPoint128.Q128 / reserveFund.basePriceX128;
         uint256 tokenAmount = reserveFund.tokenAmount;
-        require(tokenAmount >= outputTokenAmount, "Insufficient reserve token");
+        require(tokenAmount >= outputTokenAmount, InsufficientReserveToken());
         reserveFund.tokenAmount = tokenAmount - outputTokenAmount;
         IERC20(token).safeTransfer(msgSender, outputTokenAmount);
 
@@ -82,7 +82,7 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
         ReserveFund storage reserveFund = _reserveFunds[token];
         outputFundAmount = inputTokenAmount * reserveFund.basePriceX128 / FixedPoint128.Q128;
         uint256 fundAmount = reserveFund.fundAmount;
-        require(fundAmount >= outputFundAmount, "Insufficient reserve fund");
+        require(fundAmount >= outputFundAmount, InsufficientReserveFund());
         reserveFund.fundAmount = fundAmount - outputFundAmount;
 
         IERC20(UPT).safeTransfer(msgSender, outputFundAmount);
@@ -94,7 +94,7 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
      * @param _purchaseFeeRatio - Purchase fee ratio
      */
     function setPurchaseFeeRatio(uint256 _purchaseFeeRatio) external override onlyOwner {
-        require(_purchaseFeeRatio <= RATIO, "Ratio too high");
+        require(_purchaseFeeRatio <= RATIO, RatioOverflow());
         purchaseFeeRatio = _purchaseFeeRatio;
     }
 }
