@@ -7,42 +7,46 @@ import "../src/verse/ReserveFundManager.sol";
 
 contract MemeverseScript is BaseScript {
     function run() public broadcaster {
+        address UBNB = vm.envAddress("UBNB");
         address owner = vm.envAddress("OWNER");
         address revenuePool = vm.envAddress("REVENUPOOL");
-        address factory = vm.envAddress("OUTSWAP_FACTORY");
-        address router = vm.envAddress("OUTSWAP_ROUTER");
+        address factory = vm.envAddress("OUTRUN_AMM_FACTORY");
+        address router = vm.envAddress("OUTRUN_AMM_ROUTER");
         
-        Memeverse memeverse = new Memeverse(
-            "Memeverse",
-            "MVS",
+        Memeverse UBNBMemeverse = new Memeverse(
+            "UBNBMemeverse",
+            "MVS-UBNB",
+            UBNB,
             owner,
             revenuePool,
             factory,
             router
         );
-        address memeverseAddr = address(memeverse);
-        console.log("Memeverse deployed on %s", memeverseAddr);
+        address UBNBMemeverseAddr = address(UBNBMemeverse);
+        console.log("UBNBMemeverse deployed on %s", UBNBMemeverseAddr);
 
-        address reserveFundManager = address(new ReserveFundManager(owner, memeverseAddr));
-        console.log("ReserveFundManager deployed on %s", reserveFundManager);
+        address UBNBReserveFundManager = address(new ReserveFundManager(owner, UBNBMemeverseAddr, UBNB));
+        console.log("UBNBReserveFundManager deployed on %s", UBNBReserveFundManager);
 
         uint256 genesisFee = 0.1 ether;
         uint256 reserveFundRatio = 2000;
         uint256 permanentLockRatio = 5000;
         uint256 maxEarlyUnlockRatio = 70;
+        uint256 minTotalFund = 20 * 10**18;
         uint128 minDurationDays = 1;
         uint128 maxDurationDays = 7;
         uint128 minLockupDays = 90;
-        uint128 maxLockupDays = 3650;
+        uint128 maxLockupDays = 1825;
         uint128 minfundBasedAmount = 1;
         uint128 maxfundBasedAmount = 1000000;
 
-        memeverse.initialize(
-            reserveFundManager,
+        UBNBMemeverse.initialize(
+            UBNBReserveFundManager,
             genesisFee, 
             reserveFundRatio, 
             permanentLockRatio, 
             maxEarlyUnlockRatio, 
+            minTotalFund,
             minDurationDays, 
             maxDurationDays, 
             minLockupDays, 
