@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -16,16 +16,14 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
 
     uint256 public constant RATIO = 10000;
     address public immutable MEMEVERSE;
+    address public immutable UPT;
 
     uint256 public purchaseFeeRatio;
-    mapping(address token => ReserveFund) private _reserveFunds;
+    mapping(address token => ReserveFund) public _reserveFunds;
 
-    constructor(address _owner, address _memeverse) Ownable(_owner) {
+    constructor(address _owner, address _memeverse, address _upt) Ownable(_owner) {
         MEMEVERSE = _memeverse;
-    }
-
-    function reserveFunds(address token) external view override returns (ReserveFund memory) {
-        return _reserveFunds[token];
+        UPT = _upt;
     }
 
     /**
@@ -33,15 +31,13 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
      * @param token - Token address
      * @param fundAmount - Reserve fund amount
      * @param basePriceX128 - Token base priceX128(mul 2**128)
-     * @param fundToken - fund token address
      */
-    function deposit(address token, uint256 fundAmount, uint256 basePriceX128, address fundToken) external override {
+    function deposit(address token, uint256 fundAmount, uint256 basePriceX128) external override {
         require(msg.sender == MEMEVERSE, "Only memeverse");
-        IERC20(fundToken).safeTransferFrom(msg.sender, address(this), fundAmount);
+        IERC20(UPT).safeTransferFrom(msg.sender, address(this), fundAmount);
 
         ReserveFund storage reserveFund = _reserveFunds[token];
         reserveFund.fundAmount += fundAmount;
-        reserveFund.fundToken = fundToken;
 
         if (reserveFund.basePriceX128 == 0 ) {
             reserveFund.basePriceX128 = basePriceX128;
@@ -57,8 +53,7 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
     function purchase(address token, uint256 inputFundAmount) external override returns (uint256 outputTokenAmount) {
         address msgSender = msg.sender;
         ReserveFund storage reserveFund = _reserveFunds[token];
-        address fundToken = reserveFund.fundToken;
-        IERC20(fundToken).safeTransferFrom(msgSender, address(this), inputFundAmount);
+        IERC20(UPT).safeTransferFrom(msgSender, address(this), inputFundAmount);
         uint256 purchaseFee = inputFundAmount * purchaseFeeRatio / RATIO;
         inputFundAmount -= purchaseFee;
 
@@ -68,7 +63,7 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
         reserveFund.tokenAmount = tokenAmount - outputTokenAmount;
         IERC20(token).safeTransfer(msgSender, outputTokenAmount);
 
-        emit Purchase(token, fundToken, inputFundAmount, outputTokenAmount, purchaseFee);
+        emit Purchase(token, inputFundAmount, outputTokenAmount, purchaseFee);
     }
 
     /**
@@ -90,10 +85,9 @@ contract ReserveFundManager is IReserveFundManager, Ownable {
         require(fundAmount >= outputFundAmount, "Insufficient reserve fund");
         reserveFund.fundAmount = fundAmount - outputFundAmount;
 
-        address fundToken = reserveFund.fundToken;
-        IERC20(fundToken).safeTransfer(msgSender, outputFundAmount);
+        IERC20(UPT).safeTransfer(msgSender, outputFundAmount);
 
-        emit Repurchase(token, fundToken, inputTokenAmount, outputFundAmount, burnedTokenAmount);
+        emit Repurchase(token, inputTokenAmount, outputFundAmount, burnedTokenAmount);
     }
 
     /**

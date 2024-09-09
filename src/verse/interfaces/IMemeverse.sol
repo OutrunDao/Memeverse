@@ -1,40 +1,29 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 /**
  * @title Memeverse interface
  */
 interface IMemeverse {
-    struct FundType {
-        uint256 minTotalFund;           // Minimum total fund
-        uint256 minFundDeposit;         // Minimum fund deposit
-        address fundToken;              // Fund token address
-        address outStakeManager;        // Outstake manager address
-    }
-
     struct LaunchPool {
         address token;                  // Token address
         address liquidProof;            // Liquidity proof token address
         string name;                    // Token name
         string symbol;                  // Token symbol
         string description;             // Token description;
-        uint256 totalFund;              // Funds(PT) actually added to the memeverse
+        uint256 totalFund;              // Funds(UPT) actually added to the memeverse
         uint256 endTime;                // EndTime of launchPool
         uint256 lockupDays;             // LockupDays of liquidity
         uint256 fundBasedAmount;        // Token amount based fund
-        uint256 fundTypeId;             // Type of deposited funds
     }
 
-    function launchPools(uint256 poolId) external view returns (LaunchPool memory);
-
-    function fundTypes(uint256 typeId) external view returns (FundType memory);
-
     function initialize(
-        address _reserveFundManager,
+        address reserveFundManager,
         uint256 genesisFee,
         uint256 reserveFundRatio,
         uint256 permanentLockRatio,
         uint256 maxEarlyUnlockRatio,
+        uint256 minTotalFund,
         uint128 minDurationDays,
         uint128 maxDurationDays,
         uint128 minLockupDays,
@@ -43,13 +32,13 @@ interface IMemeverse {
         uint128 maxfundBasedAmount
     ) external;
 
-    function deposit(uint256 poolId, uint256 amountInNativeYieldToken) external;
+    function deposit(uint256 poolId, uint256 amountInUPT) external;
 
     function enablePoolTokenTransfer(uint256 poolId) external;
 
-    function claimPoolLiquidity(uint256 poolId, uint256 burnedLiquidity) external returns (uint256 claimedLiquidity);
+    function redeemLiquidity(uint256 poolId, uint256 liquidity) external returns (uint256 claimedLiquidity);
 
-    function claimTransactionFees(uint256 poolId) external;
+    function claimTradeFees(uint256 poolId) external;
 
     function registerMemeverse(
         string calldata _name,
@@ -57,9 +46,7 @@ interface IMemeverse {
         string calldata description,
         uint256 durationDays,
         uint256 lockupDays,
-        uint256 fundBasedAmount,
-        uint256 mintLimit,
-        uint256 fundTypeId
+        uint256 fundBasedAmount
     ) external payable returns (uint256 poolId);
 
     function setRevenuePool(address revenuePool) external;
@@ -72,36 +59,40 @@ interface IMemeverse {
 
     function setMaxEarlyUnlockRatio(uint256 earlyUnlockRatio) external;
 
+    function setMinTotalFund(uint256 _minTotalFund) external;
+
     function setDurationDaysRange(uint128 minDurationDays, uint128 maxDurationDays) external;
 
     function setLockupDaysRange(uint128 minLockupDays, uint128 maxLockupDays) external;
 
     function setFundBasedAmountRange(uint128 minfundBasedAmount, uint128 maxfundBasedAmount) external;
 
-    function setFundType(
-        uint256 typeId, 
-        uint256 minTotalFund, 
-        uint256 minFundDeposit, 
-        address fundToken, 
-        address outStakeManager
-    ) external;
+
+    error InvalidRegisterInfo();
+
+    error NotDepositStage(uint256 endTime);
+
+    error NotLiquidityLockStage(uint256 endTime);
+
+    error InsufficientGenesisFee(uint256 genesisFee);
+
+    error InsufficientTotalFund(uint256 minTotalFund);
 
 
     event Deposit(
         uint256 indexed poolId, 
         address indexed msgSender, 
-        uint256 amountInPT, 
+        uint256 amountInUPT, 
         uint256 baseAmount, 
         uint256 deployAmount, 
         uint256 proofAmount
     );
 
-    event ClaimPoolLiquidity(uint256 indexed poolId, address account, uint256 lpAmount);
+    event RedeemLiquidity(uint256 indexed poolId, address account, uint256 liquidity);
 
-    event ClaimTransactionFees(
+    event ClaimTradeFees(
         uint256 indexed poolId, 
         address indexed owner, 
-        address token, 
         address token0, 
         uint256 amount0, 
         address token1, 

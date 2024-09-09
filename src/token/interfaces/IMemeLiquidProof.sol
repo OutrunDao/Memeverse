@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+//SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.26;
 
-import "../../external/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Memeverse Liquidity proof Token Interface

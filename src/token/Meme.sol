@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -15,7 +15,6 @@ contract Meme is IMeme, Ownable {
     string public symbol;
     uint8 public immutable decimals;
     uint256 public totalSupply;
-    uint256 public mintLimit; // if 0, unlimit
     address public memeverse;
     address public reserveFundManager;
     bool public isTransferable;
@@ -24,7 +23,6 @@ contract Meme is IMeme, Ownable {
     mapping(address => mapping(address => uint256)) public allowance;
     mapping(address => uint256) public nonces;
 
-    error MemeTokenExceedsMintLimit();
     error TransferNotEnable();
 
     modifier onlyMemeverse() {
@@ -36,15 +34,13 @@ contract Meme is IMeme, Ownable {
         string memory _name, 
         string memory _symbol,
         uint8 _decimals, 
-        uint256 _mintLimit,
+        address _owner,
         address _memeverse,
-        address _reserveFundManager,
-        address _owner
+        address _reserveFundManager
     ) Ownable(_owner) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        mintLimit = _mintLimit;
         memeverse = _memeverse;
         reserveFundManager = _reserveFundManager;
     }
@@ -115,11 +111,6 @@ contract Meme is IMeme, Ownable {
 
     function mint(address account, uint256 amount) external override onlyMemeverse {
         _mint(account, amount);
-
-        uint256 _mintLimit = mintLimit;
-        if (_mintLimit != 0 && totalSupply > _mintLimit) {
-            revert MemeTokenExceedsMintLimit();
-        }
     }
 
     function burn(address account, uint256 amount) external override returns (bool) {
